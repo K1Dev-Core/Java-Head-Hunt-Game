@@ -59,13 +59,15 @@ public class GamePanel extends JPanel {
     private void setupCustomCursor() {
         try {
             BufferedImage originalImage = ImageIO.read(new File("res/crosshair182.png"));
-            int scale = 2;
-            int newWidth = originalImage.getWidth() / scale;
-            int newHeight = originalImage.getHeight() / scale;
+            
+            int newWidth = 48;
+            int newHeight = 48;
 
             BufferedImage scaledImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = scaledImage.createGraphics();
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
             g2d.dispose();
 
@@ -73,10 +75,13 @@ public class GamePanel extends JPanel {
             int hotSpotY = newHeight / 2;
 
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                    scaledImage, new Point(hotSpotX, hotSpotY), "crosshair");
+                    scaledImage, new Point(hotSpotX, hotSpotY), "custom crosshair");
             setCursor(customCursor);
+            
+            System.out.println("Custom cursor loaded successfully: " + newWidth + "x" + newHeight);
         } catch (Exception e) {
             System.err.println("Cannot load crosshair image: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -120,7 +125,7 @@ public class GamePanel extends JPanel {
             int headY = (int) head.getY();
             int width = 72;
             int height = 72;
-            int hitboxPadding = 60;
+            int hitboxPadding = 64;
 
             if (mouseX >= headX - hitboxPadding && mouseX <= headX + width + hitboxPadding &&
                     mouseY >= headY - hitboxPadding && mouseY <= headY + height + hitboxPadding) {
