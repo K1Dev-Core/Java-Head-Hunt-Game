@@ -12,31 +12,38 @@ public class GamePanel extends JPanel {
     private Map<String, Player> players = new ConcurrentHashMap<>();
     private Map<Integer, HeadObject> heads = new ConcurrentHashMap<>();
     private String myPlayerId;
-    private BufferedImage crosshairImage;
     private GameClient client;
 
     public GamePanel(GameClient client) {
         this.client = client;
         setBackground(BACKGROUND_COLOR);
         setPreferredSize(new Dimension(GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT));
-        loadCrosshairImage();
+        setupCustomCursor();
         setupMouseListener();
-        hideCursor();
-
+        
         Timer timer = new Timer(16, e -> repaint());
         timer.start();
     }
-
-    private void hideCursor() {
-        BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-        Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                cursorImg, new Point(0, 0), "blank cursor");
-        setCursor(blankCursor);
-    }
-
-    private void loadCrosshairImage() {
+    
+    private void setupCustomCursor() {
         try {
-            crosshairImage = ImageIO.read(new File("res/crosshair182.png"));
+            BufferedImage originalImage = ImageIO.read(new File("res/crosshair182.png"));
+            int scale = 3;
+            int newWidth = originalImage.getWidth() / scale;
+            int newHeight = originalImage.getHeight() / scale;
+            
+            BufferedImage scaledImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = scaledImage.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+            g2d.dispose();
+            
+            int hotSpotX = newWidth / 2;
+            int hotSpotY = newHeight / 2;
+            
+            Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+                scaledImage, new Point(hotSpotX, hotSpotY), "crosshair");
+            setCursor(customCursor);
         } catch (Exception e) {
             System.err.println("Cannot load crosshair image: " + e.getMessage());
         }
@@ -79,9 +86,9 @@ public class GamePanel extends JPanel {
             int headY = (int) head.getY();
             int width = 72;
             int height = 72;
-            
+
             if (mouseX >= headX && mouseX <= headX + width &&
-                mouseY >= headY && mouseY <= headY + height) {
+                    mouseY >= headY && mouseY <= headY + height) {
                 SoundManager.playSound("res/sfx/bubble-pop.wav");
                 client.sendHeadHit(head.getId());
                 break;
@@ -131,11 +138,7 @@ public class GamePanel extends JPanel {
         for (HeadObject head : heads.values()) {
             head.render(g2d);
         }
-
-        for (Player player : players.values()) {
-            drawCrosshair(g2d, player);
-        }
-
+        
         drawScoreboard(g2d);
     }
 
@@ -180,35 +183,4 @@ public class GamePanel extends JPanel {
         }
     }
 
-    private void drawCrosshair(Graphics2D g2d, Player player) {
-        int x = player.getX();
-        int y = player.getY();
-
-        if (crosshairImage != null) {
-            int imgW = crosshairImage.getWidth();
-            int imgH = crosshairImage.getHeight();
-            int scaledW = imgW / 3;
-            int scaledH = imgH / 3;
-
-            if (player.getId().equals(myPlayerId)) {
-                g2d.drawImage(crosshairImage, x - scaledW / 2, y - scaledH / 2, scaledW, scaledH, null);
-            } else {
-                BufferedImage tinted = new BufferedImage(imgW, imgH, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D tg = tinted.createGraphics();
-                tg.drawImage(crosshairImage, 0, 0, null);
-                tg.setComposite(AlphaComposite.SrcAtop);
-                tg.setColor(player.getColor());
-                tg.fillRect(0, 0, imgW, imgH);
-                tg.dispose();
-
-                g2d.drawImage(tinted, x - scaledW / 2, y - scaledH / 2, scaledW, scaledH, null);
-            }
-        } else {
-            g2d.setColor(player.getColor());
-            g2d.setStroke(new BasicStroke(2));
-            g2d.drawLine(x - 10, y, x + 10, y);
-            g2d.drawLine(x, y - 10, x, y + 10);
-            g2d.drawOval(x - 15, y - 15, 30, 30);
-        }
-    }
 }

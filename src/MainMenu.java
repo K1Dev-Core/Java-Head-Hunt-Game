@@ -100,20 +100,20 @@ public class MainMenu {
             public void mouseMoved(MouseEvent e) {
                 int x = e.getX();
                 int y = e.getY();
-                
+
                 boolean wasStartHover = startHover;
                 boolean wasExitHover = exitHover;
-                
+
                 startHover = isInsideButton(x, y, 640.0, 339.0, 260.0, 75.0);
                 exitHover = isInsideButton(x, y, 644.0, 452.0, 260.0, 75.0);
-                
+
                 if (!wasStartHover && startHover) {
                     SoundManager.playSound("res/sfx/UI_Click_Organic_mono.wav");
                 }
                 if (!wasExitHover && exitHover) {
                     SoundManager.playSound("res/sfx/UI_Click_Organic_mono.wav");
                 }
-                
+
                 if (wasStartHover != startHover || wasExitHover != exitHover) {
                     contentPanel.repaint();
                 }
