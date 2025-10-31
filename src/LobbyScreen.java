@@ -19,9 +19,7 @@ public class LobbyScreen extends JFrame {
     private boolean gameInProgress = false;
     private Runnable onExitCallback;
     private int teamHover = -1;
-    private float[] teamScales = {1.0f, 1.0f, 1.0f, 1.0f};
-    private float[] targetScales = {1.0f, 1.0f, 1.0f, 1.0f};
-    private Timer scaleAnimationTimer;
+    private int playerHover = -1;
 
     public LobbyScreen(String myPlayerId) {
         this.myPlayerId = myPlayerId;
@@ -35,25 +33,8 @@ public class LobbyScreen extends JFrame {
         loadBackgroundImage();
         setupCustomCursor();
         playerIds.add(myPlayerId);
-        startScaleAnimation();
 
         createWindow();
-    }
-    
-    private void startScaleAnimation() {
-        scaleAnimationTimer = new Timer(16, e -> {
-            boolean needsRepaint = false;
-            for (int i = 0; i < 4; i++) {
-                if (Math.abs(teamScales[i] - targetScales[i]) > 0.001f) {
-                    teamScales[i] += (targetScales[i] - teamScales[i]) * 0.2f;
-                    needsRepaint = true;
-                }
-            }
-            if (needsRepaint && contentPanel != null) {
-                contentPanel.repaint();
-            }
-        });
-        scaleAnimationTimer.start();
     }
 
     private void loadBackgroundImage() {
@@ -140,10 +121,15 @@ public class LobbyScreen extends JFrame {
                         
                         int playerNumber = Integer.parseInt(playerId.substring(1));
                         
+                        double size = playerSizes[i];
+                        if (playerHover == i) {
+                            size *= 1.15;
+                        }
+                        
                         MenuElement playerImg = new MenuElement(MenuElement.ElementType.IMAGE, 
                             "res/players/" + playerNumber + ".png", 
                             playerXPositions[i], playerYPositions[i], 
-                            playerSizes[i], playerSizes[i]);
+                            size, size);
                         playerImg.render(g2d);
 
                         String playerLabel = playerId;
@@ -177,7 +163,7 @@ public class LobbyScreen extends JFrame {
                 howToTitle.setTextColor(new Color(0, 0, 0));
                 howToTitle.render(g2d);
 
-                MenuElement howToText1 = new MenuElement("โจมตีมอนเตอร์ให้ได้มากที่สุด", 1363.0, 88.0, 36);
+                MenuElement howToText1 = new MenuElement("[คลิ๊ก] โจมตีมอนเตอร์ให้ได้มากที่สุด", 1363.0, 88.0, 36);
                 howToText1.setTextColor(new Color(0, 0, 0));
                 howToText1.render(g2d);
 
@@ -221,9 +207,13 @@ public class LobbyScreen extends JFrame {
                     double w = teamPositions[i][2];
                     double h = teamPositions[i][3];
                     
-                    float scale = teamScales[i];
+                    if (teamHover == i) {
+                        w *= 1.1;
+                        h *= 1.1;
+                    }
+                    
                     MenuElement team = new MenuElement(MenuElement.ElementType.IMAGE, 
-                        teamPaths[i], x, y, w * scale, h * scale);
+                        teamPaths[i], x, y, w, h);
                     team.render(g2d);
                 }
 
@@ -314,15 +304,30 @@ public class LobbyScreen extends JFrame {
                     }
                 }
 
-                for (int i = 0; i < 4; i++) {
-                    targetScales[i] = (teamHover == i) ? 1.08f : 1.0f;
-                }
-
                 if (oldTeamHover != teamHover && teamHover != -1) {
                     SoundManager.playSound("res/sfx/UI_Click_Organic_mono.wav");
                 }
 
-                if (wasBackHover != backHover) {
+                int oldPlayerHover = playerHover;
+                playerHover = -1;
+                
+                double[] playerXPositions = {587.0, 727.0, 866.0, 1000.0};
+                double[] playerYPositions = {446.0, 447.0, 450.0, 451.0};
+                double[] playerSizes = {107.5, 108.0, 109.7, 115.5};
+                
+                for (int i = 0; i < Math.min(GameConfig.MAX_PLAYERS, playerIds.size()); i++) {
+                    if (isInsideButton(x, y, playerXPositions[i], playerYPositions[i], 
+                                      playerSizes[i], playerSizes[i])) {
+                        playerHover = i;
+                        break;
+                    }
+                }
+
+                if (oldPlayerHover != playerHover && playerHover != -1) {
+                    SoundManager.playSound("res/sfx/UI_Click_Organic_mono.wav");
+                }
+
+                if (wasBackHover != backHover || oldTeamHover != teamHover || oldPlayerHover != playerHover) {
                     contentPanel.repaint();
                 }
             }
@@ -381,14 +386,6 @@ public class LobbyScreen extends JFrame {
 
     public void setOnExitCallback(Runnable callback) {
         this.onExitCallback = callback;
-    }
-    
-    @Override
-    public void dispose() {
-        if (scaleAnimationTimer != null) {
-            scaleAnimationTimer.stop();
-        }
-        super.dispose();
     }
 }
 
