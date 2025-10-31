@@ -33,12 +33,6 @@ public class GameOverScreen extends JFrame {
                 334.2, 278.5);
         staticElements.add(img1);
 
-        MenuElement img2 = new MenuElement(MenuElement.ElementType.IMAGE, "res/3.png", 643.0, 362.0, 589.6, 602.2);
-        staticElements.add(img2);
-
-        MenuElement img3 = new MenuElement(MenuElement.ElementType.IMAGE, "res/5.png", 1232.0, 33.0, 52.0, 15.0);
-        staticElements.add(img3);
-
         MenuElement titleText = new MenuElement("SCORE", 644.0, 220.0, 70);
         titleText.setTextColor(new Color(0, 0, 0));
         staticElements.add(titleText);
@@ -155,7 +149,7 @@ public class GameOverScreen extends JFrame {
                     playerText += " (YOU)";
                 }
 
-                MenuElement playerElement = new MenuElement(playerText, 498.0, yPositions[index], 32);
+                MenuElement playerElement = new MenuElement(playerText, 640.0, yPositions[index], 32);
                 playerElement.setTextColor(new Color(0, 0, 0));
                 dynamicTextElements.add(playerElement);
 
