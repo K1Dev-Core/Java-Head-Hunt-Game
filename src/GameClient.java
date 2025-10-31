@@ -3,7 +3,7 @@ import java.io.*;
 import java.net.*;
 
 public class GameClient extends JFrame {
-    private static final String SERVER_HOST = "89.38.101.103";
+    private static final String SERVER_HOST = GameConfig.IP;
     private static final int SERVER_PORT = 8888;
 
     private Socket socket;

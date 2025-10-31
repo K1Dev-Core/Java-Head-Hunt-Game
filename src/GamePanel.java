@@ -59,7 +59,7 @@ public class GamePanel extends JPanel {
     private void setupCustomCursor() {
         try {
             BufferedImage originalImage = ImageIO.read(new File("res/crosshair182.png"));
-            
+
             int newWidth = 48;
             int newHeight = 48;
 
@@ -77,7 +77,7 @@ public class GamePanel extends JPanel {
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(
                     scaledImage, new Point(hotSpotX, hotSpotY), "custom crosshair");
             setCursor(customCursor);
-            
+
             System.out.println("Custom cursor loaded successfully: " + newWidth + "x" + newHeight);
         } catch (Exception e) {
             System.err.println("Cannot load crosshair image: " + e.getMessage());
