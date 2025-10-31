@@ -18,12 +18,17 @@ public class GameServer {
     private int nextHeadId = 0;
     private int nextPlayerNumber = 1;
     private Timer physicsTimer;
+    private Timer gameTimer;
+    private long gameStartTime;
+    private static final int GAME_DURATION = 120;
 
     public void start() {
         System.out.println("Server starting on port " + PORT);
+        gameStartTime = System.currentTimeMillis();
         spawnInitialHeads();
         startPhysicsLoop();
-
+        startGameTimer();
+        
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -34,6 +39,24 @@ public class GameServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    private void startGameTimer() {
+        gameTimer = new Timer();
+        gameTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
+                long remaining = GAME_DURATION - elapsed;
+                if (remaining < 0) remaining = 0;
+                broadcastToAll("TIME:" + remaining);
+                
+                if (remaining == 0) {
+                    broadcastToAll("GAMEOVER");
+                    gameTimer.cancel();
+                }
+            }
+        }, 0, 1000);
     }
 
     private void spawnInitialHeads() {

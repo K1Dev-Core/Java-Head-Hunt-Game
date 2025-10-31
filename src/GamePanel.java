@@ -13,8 +13,7 @@ public class GamePanel extends JPanel {
     private Map<Integer, HeadObject> heads = new ConcurrentHashMap<>();
     private String myPlayerId;
     private GameClient client;
-    private long gameStartTime;
-    private static final int GAME_DURATION = 120;
+    private long remainingTime = 120;
     private boolean gameEnded = false;
     private java.util.List<Explosion> explosions = new java.util.concurrent.CopyOnWriteArrayList<>();
     private java.util.List<ComboText> comboTexts = new java.util.concurrent.CopyOnWriteArrayList<>();
@@ -25,29 +24,26 @@ public class GamePanel extends JPanel {
         setPreferredSize(new Dimension(GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT));
         setupCustomCursor();
         setupMouseListener();
-        gameStartTime = System.currentTimeMillis();
-
-        Timer timer = new Timer(16, e -> {
-            checkGameTime();
-            repaint();
-        });
+        
+        Timer timer = new Timer(16, e -> repaint());
         timer.start();
     }
-
-    private void checkGameTime() {
+    
+    public void updateGameTime(long remaining) {
+        this.remainingTime = remaining;
+    }
+    
+    public void endGame() {
         if (!gameEnded) {
-            long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
-            if (elapsed >= GAME_DURATION) {
-                gameEnded = true;
-                showGameOver();
-            }
+            gameEnded = true;
+            showGameOver();
         }
     }
-
+    
     private void showGameOver() {
         java.util.List<Player> sortedPlayers = new java.util.ArrayList<>(players.values());
         sortedPlayers.sort((p1, p2) -> p2.getScore() - p1.getScore());
-
+        
         StringBuilder message = new StringBuilder("เกมจบ!\n\nผลคะแนน:\n");
         for (int i = 0; i < sortedPlayers.size(); i++) {
             Player p = sortedPlayers.get(i);
@@ -57,7 +53,7 @@ public class GamePanel extends JPanel {
             }
             message.append("\n");
         }
-
+        
         JOptionPane.showMessageDialog(this, message.toString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
         System.exit(0);
     }
@@ -131,10 +127,10 @@ public class GamePanel extends JPanel {
             if (mouseX >= headX - hitboxPadding && mouseX <= headX + width + hitboxPadding &&
                     mouseY >= headY - hitboxPadding && mouseY <= headY + height + hitboxPadding) {
                 SoundManager.playSound("res/sfx/bubble-pop.wav");
-                
-                explosions.add(new Explosion(headX + width/2, headY + height/2));
-                comboTexts.add(new ComboText(headX + width/2, headY + height/2, 10));
-                
+
+                explosions.add(new Explosion(headX + width / 2, headY + height / 2));
+                comboTexts.add(new ComboText(headX + width / 2, headY + height / 2, 10));
+
                 client.sendHeadHit(head.getId());
                 break;
             }
@@ -183,17 +179,17 @@ public class GamePanel extends JPanel {
         for (HeadObject head : heads.values()) {
             head.render(g2d);
         }
-        
+
         explosions.removeIf(Explosion::isFinished);
         for (Explosion explosion : explosions) {
             explosion.render(g2d);
         }
-        
+
         comboTexts.removeIf(ComboText::isFinished);
         for (ComboText combo : comboTexts) {
             combo.render(g2d);
         }
-        
+
         drawOtherPlayersCursors(g2d);
         drawScoreboard(g2d);
         drawTimer(g2d);

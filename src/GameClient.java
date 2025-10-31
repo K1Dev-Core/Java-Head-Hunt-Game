@@ -91,6 +91,13 @@ public class GameClient extends JFrame {
             String playerId = parts[0];
             int score = Integer.parseInt(parts[1]);
             gamePanel.updatePlayerScore(playerId, score);
+            
+        } else if (message.startsWith("TIME:")) {
+            long remaining = Long.parseLong(message.substring(5));
+            gamePanel.updateGameTime(remaining);
+            
+        } else if (message.startsWith("GAMEOVER")) {
+            gamePanel.endGame();
         }
     }
 
