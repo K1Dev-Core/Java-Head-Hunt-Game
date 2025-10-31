@@ -85,12 +85,24 @@ public class GameClient extends JFrame {
                     gamePanel.updateHead(head);
                 }
             }
+
+        } else if (message.startsWith("SCORE:")) {
+            String[] parts = message.substring(6).split(",");
+            String playerId = parts[0];
+            int score = Integer.parseInt(parts[1]);
+            gamePanel.updatePlayerScore(playerId, score);
         }
     }
 
     public void sendPosition(int x, int y) {
         if (out != null) {
             out.println("POS:" + x + "," + y);
+        }
+    }
+
+    public void sendHeadHit(int headId) {
+        if (out != null) {
+            out.println("HIT:" + headId);
         }
     }
 

@@ -54,6 +54,30 @@ public class GamePanel extends JPanel {
                 }
             }
         });
+
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (myPlayerId != null) {
+                    checkHeadClick(e.getX(), e.getY());
+                }
+            }
+        });
+    }
+
+    private void checkHeadClick(int mouseX, int mouseY) {
+        for (HeadObject head : heads.values()) {
+            int headX = (int) head.getX();
+            int headY = (int) head.getY();
+            int width = 36;
+            int height = 36;
+
+            if (mouseX >= headX && mouseX <= headX + width &&
+                    mouseY >= headY && mouseY <= headY + height) {
+                client.sendHeadHit(head.getId());
+                break;
+            }
+        }
     }
 
     public void setMyPlayerId(String id, Color color) {
@@ -82,6 +106,13 @@ public class GamePanel extends JPanel {
         heads.put(head.getId(), head);
     }
 
+    public void updatePlayerScore(String playerId, int score) {
+        Player player = players.get(playerId);
+        if (player != null) {
+            player.setScore(score);
+        }
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -94,6 +125,49 @@ public class GamePanel extends JPanel {
 
         for (Player player : players.values()) {
             drawCrosshair(g2d, player);
+        }
+
+        drawScoreboard(g2d);
+    }
+
+    private void drawScoreboard(Graphics2D g2d) {
+        g2d.setColor(new Color(0, 0, 0, 150));
+        g2d.fillRoundRect(10, 10, 220, 40 + players.size() * 30, 10, 10);
+        
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(FontManager.getFont(Font.BOLD, 18));
+        g2d.drawString("SCOREBOARD", 20, 35);
+        
+        g2d.setFont(FontManager.getFont(Font.PLAIN, 14));
+        int y = 60;
+        
+        java.util.List<Player> sortedPlayers = new java.util.ArrayList<>(players.values());
+        sortedPlayers.sort((p1, p2) -> {
+            String id1 = p1.getId().substring(1);
+            String id2 = p2.getId().substring(1);
+            try {
+                return Integer.parseInt(id1) - Integer.parseInt(id2);
+            } catch (Exception e) {
+                return p1.getId().compareTo(p2.getId());
+            }
+        });
+        
+        for (Player player : sortedPlayers) {
+            String displayName = player.getId();
+            
+            g2d.setColor(player.getColor());
+            g2d.fillOval(20, y - 10, 15, 15);
+            
+            g2d.setColor(Color.WHITE);
+            String text = displayName + ": " + player.getScore();
+            
+            if (player.getId().equals(myPlayerId)) {
+                text += " (ME)";
+            }
+            
+            g2d.drawString(text, 45, y + 2);
+            
+            y += 30;
         }
     }
 

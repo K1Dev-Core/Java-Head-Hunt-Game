@@ -1,32 +1,44 @@
 import java.awt.*;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 
 public class FontManager {
-    private static Font thaiFont;
+    private static Font arabicaFont;
 
     static {
         try {
-            InputStream is = FontManager.class.getResourceAsStream("/fonts/THSarabunNew.ttf");
-            if (is != null) {
-                thaiFont = Font.createFont(Font.TRUETYPE_FONT, is);
+            File fontFile = new File("res/Arabica.ttf");
+            if (fontFile.exists()) {
+                InputStream is = new FileInputStream(fontFile);
+                arabicaFont = Font.createFont(Font.TRUETYPE_FONT, is);
                 GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                ge.registerFont(thaiFont);
+                ge.registerFont(arabicaFont);
+                is.close();
             } else {
-                thaiFont = new Font("Tahoma", Font.PLAIN, 16);
+                arabicaFont = new Font("Arial", Font.PLAIN, 16);
             }
         } catch (Exception e) {
-            thaiFont = new Font("Tahoma", Font.PLAIN, 16);
+            arabicaFont = new Font("Arial", Font.PLAIN, 16);
         }
     }
 
+    public static Font getFont(int size) {
+        return getFont(Font.PLAIN, size);
+    }
+
+    public static Font getFont(int style, int size) {
+        if (arabicaFont != null) {
+            return arabicaFont.deriveFont(style, (float)size);
+        }
+        return new Font("Arial", style, size);
+    }
+    
     public static Font getThaiFont(int size) {
-        return getThaiFont(Font.PLAIN, size);
+        return getFont(Font.PLAIN, size);
     }
 
     public static Font getThaiFont(int style, int size) {
-        if (thaiFont != null) {
-            return thaiFont.deriveFont(style, size);
-        }
-        return new Font("Tahoma", style, size);
+        return getFont(style, size);
     }
 }

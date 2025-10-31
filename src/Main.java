@@ -2,6 +2,9 @@ import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
+        UIManager.put("OptionPane.messageFont", FontManager.getFont(14));
+        UIManager.put("OptionPane.buttonFont", FontManager.getFont(14));
+        
         String[] options = { "Server", "Client" };
         int choice = JOptionPane.showOptionDialog(
                 null,

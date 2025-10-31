@@ -62,19 +62,36 @@ public class HeadObject {
 
     public void render(Graphics2D g2d) {
         if (image != null) {
-            g2d.drawImage(image, (int)x, (int)y, null);
+            g2d.drawImage(image, (int) x, (int) y, null);
         } else {
             g2d.setColor(Color.RED);
-            g2d.fillOval((int)x, (int)y, width, height);
+            g2d.fillOval((int) x, (int) y, width, height);
         }
     }
 
-    public int getId() { return id; }
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getVelocityX() { return velocityX; }
-    public double getVelocityY() { return velocityY; }
-    public String getImagePath() { return imagePath; }
+    public int getId() {
+        return id;
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public double getVelocityX() {
+        return velocityX;
+    }
+
+    public double getVelocityY() {
+        return velocityY;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
 
     public void setPosition(double x, double y) {
         this.x = x;

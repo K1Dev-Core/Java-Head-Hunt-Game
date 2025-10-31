@@ -5,12 +5,14 @@ public class Player {
     private int x;
     private int y;
     private Color color;
+    private int score;
 
     public Player(String id) {
         this.id = id;
         this.x = 0;
         this.y = 0;
         this.color = Color.WHITE;
+        this.score = 0;
     }
 
     public Player(String id, Color color) {
@@ -18,10 +20,23 @@ public class Player {
         this.x = 0;
         this.y = 0;
         this.color = color;
+        this.score = 0;
     }
 
     public void setColor(Color color) {
         this.color = color;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public void addScore(int points) {
+        this.score += points;
     }
 
     public String getId() {
@@ -46,7 +61,7 @@ public class Player {
     }
 
     public String toMessage() {
-        return id + "," + x + "," + y + "," + color.getRGB();
+        return id + "," + x + "," + y + "," + color.getRGB() + "," + score;
     }
 
     public static Player fromMessage(String message) {
@@ -55,6 +70,9 @@ public class Player {
         player.x = Integer.parseInt(parts[1]);
         player.y = Integer.parseInt(parts[2]);
         player.color = new Color(Integer.parseInt(parts[3]));
+        if (parts.length > 4) {
+            player.score = Integer.parseInt(parts[4]);
+        }
         return player;
     }
 }
