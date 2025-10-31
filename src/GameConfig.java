@@ -18,13 +18,13 @@ public class GameConfig {
     // ============================================
     // การตั้งค่าเกม (Game Settings)
     // ============================================
-    public static final int GAME_DURATION = 30;             // ระยะเวลาเกม (วินาที)
-    public static final int GAME_RESET_DELAY = 5000;         // ดีเลย์ก่อนรีเซ็ตเกม (มิลลิวินาที)
+    public static final int GAME_DURATION = 120;             // ระยะเวลาเกม (วินาที)
+    public static final int GAME_RESET_DELAY = 10000;         // ดีเลย์ก่อนรีเซ็ตเกม (มิลลิวินาที)
     public static final int MAX_HEADS = 10;                  // จำนวนหัวสูงสุดในเกม
     public static final int SCORE_PER_HIT = 10;              // คะแนนต่อการกดหัว
     public static final int MAX_PLAYERS = 4;                 // จำนวนผู้เล่นสูงสุด
     public static final int MIN_PLAYERS = 2;                 // จำนวนผู้เล่นขั้นต่ำที่เกมจะเริ่ม
-    public static final int GAME_START_DELAY = 10000;         // ดีเลย์ก่อนเริ่มเกม (มิลลิวินาที)
+    public static final int GAME_START_DELAY = 15000;         // ดีเลย์ก่อนเริ่มเกม (มิลลิวินาที)
     
     // ============================================
     // รูปภาพหัว (Head Images - Animation Frames)
