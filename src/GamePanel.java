@@ -79,9 +79,10 @@ public class GamePanel extends JPanel {
             int headY = (int) head.getY();
             int width = 72;
             int height = 72;
-
+            
             if (mouseX >= headX && mouseX <= headX + width &&
-                    mouseY >= headY && mouseY <= headY + height) {
+                mouseY >= headY && mouseY <= headY + height) {
+                SoundManager.playSound("res/sfx/bubble-pop.wav");
                 client.sendHeadHit(head.getId());
                 break;
             }
