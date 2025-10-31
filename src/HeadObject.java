@@ -28,12 +28,18 @@ public class HeadObject {
 
     private void loadImage() {
         try {
-            image = ImageIO.read(new File(imagePath));
-            width = image.getWidth();
-            height = image.getHeight();
+            BufferedImage original = ImageIO.read(new File(imagePath));
+            width = original.getWidth() * 2;
+            height = original.getHeight() * 2;
+            
+            image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = image.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.drawImage(original, 0, 0, width, height, null);
+            g2d.dispose();
         } catch (Exception e) {
-            width = 36;
-            height = 36;
+            width = 72;
+            height = 72;
         }
     }
 

@@ -49,19 +49,19 @@ public class GameServer {
         double vx = (random.nextDouble() - 0.5) * 6;
         double vy = (random.nextDouble() - 0.5) * 6;
         String imagePath = HEAD_IMAGES[random.nextInt(HEAD_IMAGES.length)];
-        
+
         HeadObject head = new HeadObject(id, x, y, vx, vy, imagePath);
         heads.put(id, head);
         broadcastToAll("NEWHEAD:" + head.toMessage());
     }
-    
+
     private void respawnHead(int headId) {
         double x = random.nextInt(1280 - 50);
         double y = random.nextInt(720 - 50);
         double vx = (random.nextDouble() - 0.5) * 6;
         double vy = (random.nextDouble() - 0.5) * 6;
         String imagePath = HEAD_IMAGES[random.nextInt(HEAD_IMAGES.length)];
-        
+
         HeadObject head = new HeadObject(headId, x, y, vx, vy, imagePath);
         heads.put(headId, head);
     }

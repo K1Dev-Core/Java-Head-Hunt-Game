@@ -29,11 +29,11 @@ public class FontManager {
 
     public static Font getFont(int style, int size) {
         if (arabicaFont != null) {
-            return arabicaFont.deriveFont(style, (float)size);
+            return arabicaFont.deriveFont(style, (float) size);
         }
         return new Font("Arial", style, size);
     }
-    
+
     public static Font getThaiFont(int size) {
         return getFont(Font.PLAIN, size);
     }
