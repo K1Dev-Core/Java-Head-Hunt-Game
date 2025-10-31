@@ -145,19 +145,25 @@ public class GamePanel extends JPanel {
             if (mouseX >= headX - GameConfig.HEAD_HITBOX_PADDING && mouseX <= headX + width + GameConfig.HEAD_HITBOX_PADDING &&
                     mouseY >= headY - GameConfig.HEAD_HITBOX_PADDING && mouseY <= headY + height + GameConfig.HEAD_HITBOX_PADDING) {
                 
-                if (head.isSkull()) {
-                    SoundManager.playSound("res/sfx/Stamp.wav");
-                    comboTexts.add(new ComboText(headX + width / 2, headY + height / 2, -GameConfig.SKULL_PENALTY));
-                } else {
-                    SoundManager.playSound("res/sfx/bubble-pop.wav");
-                    comboTexts.add(new ComboText(headX + width / 2, headY + height / 2, GameConfig.SCORE_PER_HIT));
-                }
-
-                explosions.add(new Explosion(headX + width / 2, headY + height / 2));
                 client.sendHeadHit(head.getId());
                 break;
             }
         }
+    }
+    
+    public void showExplosion(int x, int y, boolean isSkull) {
+        int width = GameConfig.HEAD_DEFAULT_SIZE;
+        int height = GameConfig.HEAD_DEFAULT_SIZE;
+        
+        if (isSkull) {
+            SoundManager.playSound("res/sfx/Stamp.wav");
+            comboTexts.add(new ComboText(x + width / 2, y + height / 2, -GameConfig.SKULL_PENALTY));
+        } else {
+            SoundManager.playSound("res/sfx/bubble-pop.wav");
+            comboTexts.add(new ComboText(x + width / 2, y + height / 2, GameConfig.SCORE_PER_HIT));
+        }
+        
+        explosions.add(new Explosion(x + width / 2, y + height / 2));
     }
 
     public void setMyPlayerId(String id, Color color) {

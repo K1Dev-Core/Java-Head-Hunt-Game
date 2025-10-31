@@ -172,6 +172,16 @@ public class GameClient extends JFrame {
                 }
             }
 
+        } else if (message.startsWith("HEADHIT:")) {
+            String[] parts = message.substring(8).split(",");
+            int x = Integer.parseInt(parts[1]);
+            int y = Integer.parseInt(parts[2]);
+            boolean isSkull = Boolean.parseBoolean(parts[3]);
+            
+            if (gamePanel != null) {
+                gamePanel.showExplosion(x, y, isSkull);
+            }
+
         } else if (message.startsWith("SCORE:")) {
             String[] parts = message.substring(6).split(",");
             String playerId = parts[0];

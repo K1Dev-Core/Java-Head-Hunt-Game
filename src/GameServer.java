@@ -285,7 +285,11 @@ public class GameServer {
                         if (head != null) {
                             Player player = players.get(playerId);
                             
-                            if (head.isSkull()) {
+                            int x = (int)head.getX();
+                            int y = (int)head.getY();
+                            boolean isSkull = head.isSkull();
+                            
+                            if (isSkull) {
                                 player.addScore(-GameConfig.SKULL_PENALTY);
                                 log("ผู้เล่น " + playerId + " ถูก Skull! -" + GameConfig.SKULL_PENALTY + " แต้ม");
                             } else {
@@ -294,6 +298,7 @@ public class GameServer {
 
                             respawnHead(headId);
 
+                            broadcastToAll("HEADHIT:" + headId + "," + x + "," + y + "," + isSkull);
                             broadcastToAll("SCORE:" + playerId + "," + player.getScore());
                         }
                     }
