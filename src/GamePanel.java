@@ -16,6 +16,8 @@ public class GamePanel extends JPanel {
     private long gameStartTime;
     private static final int GAME_DURATION = 120;
     private boolean gameEnded = false;
+    private java.util.List<Explosion> explosions = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private java.util.List<ComboText> comboTexts = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public GamePanel(GameClient client) {
         this.client = client;
@@ -24,14 +26,14 @@ public class GamePanel extends JPanel {
         setupCustomCursor();
         setupMouseListener();
         gameStartTime = System.currentTimeMillis();
-        
+
         Timer timer = new Timer(16, e -> {
             checkGameTime();
             repaint();
         });
         timer.start();
     }
-    
+
     private void checkGameTime() {
         if (!gameEnded) {
             long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
@@ -41,11 +43,11 @@ public class GamePanel extends JPanel {
             }
         }
     }
-    
+
     private void showGameOver() {
         java.util.List<Player> sortedPlayers = new java.util.ArrayList<>(players.values());
         sortedPlayers.sort((p1, p2) -> p2.getScore() - p1.getScore());
-        
+
         StringBuilder message = new StringBuilder("เกมจบ!\n\nผลคะแนน:\n");
         for (int i = 0; i < sortedPlayers.size(); i++) {
             Player p = sortedPlayers.get(i);
@@ -55,7 +57,7 @@ public class GamePanel extends JPanel {
             }
             message.append("\n");
         }
-        
+
         JOptionPane.showMessageDialog(this, message.toString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
         System.exit(0);
     }
@@ -66,18 +68,18 @@ public class GamePanel extends JPanel {
             int scale = 2;
             int newWidth = originalImage.getWidth() / scale;
             int newHeight = originalImage.getHeight() / scale;
-            
+
             BufferedImage scaledImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = scaledImage.createGraphics();
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
             g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
             g2d.dispose();
-            
+
             int hotSpotX = newWidth / 2;
             int hotSpotY = newHeight / 2;
-            
+
             Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                scaledImage, new Point(hotSpotX, hotSpotY), "crosshair");
+                    scaledImage, new Point(hotSpotX, hotSpotY), "crosshair");
             setCursor(customCursor);
         } catch (Exception e) {
             System.err.println("Cannot load crosshair image: " + e.getMessage());
@@ -116,17 +118,18 @@ public class GamePanel extends JPanel {
     }
 
     private void checkHeadClick(int mouseX, int mouseY) {
-        if (gameEnded) return;
-        
+        if (gameEnded)
+            return;
+
         for (HeadObject head : heads.values()) {
             int headX = (int) head.getX();
             int headY = (int) head.getY();
             int width = 72;
             int height = 72;
             int hitboxPadding = 30;
-            
+
             if (mouseX >= headX - hitboxPadding && mouseX <= headX + width + hitboxPadding &&
-                mouseY >= headY - hitboxPadding && mouseY <= headY + height + hitboxPadding) {
+                    mouseY >= headY - hitboxPadding && mouseY <= headY + height + hitboxPadding) {
                 SoundManager.playSound("res/sfx/bubble-pop.wav");
                 client.sendHeadHit(head.getId());
                 break;
@@ -177,17 +180,27 @@ public class GamePanel extends JPanel {
             head.render(g2d);
         }
         
+        explosions.removeIf(Explosion::isFinished);
+        for (Explosion explosion : explosions) {
+            explosion.render(g2d);
+        }
+        
+        comboTexts.removeIf(ComboText::isFinished);
+        for (ComboText combo : comboTexts) {
+            combo.render(g2d);
+        }
+        
         drawOtherPlayersCursors(g2d);
         drawScoreboard(g2d);
         drawTimer(g2d);
     }
-    
+
     private void drawOtherPlayersCursors(Graphics2D g2d) {
         for (Player player : players.values()) {
             if (!player.getId().equals(myPlayerId)) {
                 int x = player.getX();
                 int y = player.getY();
-                
+
                 g2d.setColor(player.getColor());
                 g2d.setStroke(new BasicStroke(3));
                 g2d.drawLine(x - 15, y, x + 15, y);
@@ -196,24 +209,25 @@ public class GamePanel extends JPanel {
             }
         }
     }
-    
+
     private void drawTimer(Graphics2D g2d) {
         long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
         long remaining = GAME_DURATION - elapsed;
-        
-        if (remaining < 0) remaining = 0;
-        
+
+        if (remaining < 0)
+            remaining = 0;
+
         int minutes = (int) (remaining / 60);
         int seconds = (int) (remaining % 60);
         String timeText = String.format("%02d:%02d", minutes, seconds);
-        
+
         g2d.setFont(FontManager.getFont(Font.BOLD, 48));
         FontMetrics fm = g2d.getFontMetrics();
         int textWidth = fm.stringWidth(timeText);
-        
+
         g2d.setColor(new Color(0, 0, 0, 100));
         g2d.fillRoundRect(GameConfig.WINDOW_WIDTH / 2 - textWidth / 2 - 20, 20, textWidth + 40, 60, 15, 15);
-        
+
         if (remaining <= 10) {
             g2d.setColor(Color.RED);
         } else if (remaining <= 30) {
@@ -221,7 +235,7 @@ public class GamePanel extends JPanel {
         } else {
             g2d.setColor(Color.WHITE);
         }
-        
+
         g2d.drawString(timeText, GameConfig.WINDOW_WIDTH / 2 - textWidth / 2, 65);
     }
 
