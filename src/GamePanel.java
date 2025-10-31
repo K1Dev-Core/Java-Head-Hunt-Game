@@ -131,6 +131,10 @@ public class GamePanel extends JPanel {
             if (mouseX >= headX - hitboxPadding && mouseX <= headX + width + hitboxPadding &&
                     mouseY >= headY - hitboxPadding && mouseY <= headY + height + hitboxPadding) {
                 SoundManager.playSound("res/sfx/bubble-pop.wav");
+                
+                explosions.add(new Explosion(headX + width/2, headY + height/2));
+                comboTexts.add(new ComboText(headX + width/2, headY + height/2, 10));
+                
                 client.sendHeadHit(head.getId());
                 break;
             }
