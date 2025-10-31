@@ -8,7 +8,10 @@ public class GameServer {
     private static final int MAX_HEADS = 10;
     private static final String[] HEAD_IMAGES = {
             "res/head/Jump (36x36).png",
-            "res/head/Hit 2 (36x30)-0.png"
+            "res/head/Hit 2 (36x30)-0.png",
+            "res/head/Hit (30x38)-0.png",
+            "res/head/Hit (32x34)-0.png",
+            "res/head/Jump.png"
     };
 
     private Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
