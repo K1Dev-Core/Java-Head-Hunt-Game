@@ -28,7 +28,7 @@ public class GameServer {
         spawnInitialHeads();
         startPhysicsLoop();
         startGameTimer();
-        
+
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -40,7 +40,7 @@ public class GameServer {
             e.printStackTrace();
         }
     }
-    
+
     private void startGameTimer() {
         gameTimer = new Timer();
         gameTimer.scheduleAtFixedRate(new TimerTask() {
@@ -48,9 +48,10 @@ public class GameServer {
             public void run() {
                 long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
                 long remaining = GAME_DURATION - elapsed;
-                if (remaining < 0) remaining = 0;
+                if (remaining < 0)
+                    remaining = 0;
                 broadcastToAll("TIME:" + remaining);
-                
+
                 if (remaining == 0) {
                     broadcastToAll("GAMEOVER");
                     gameTimer.cancel();

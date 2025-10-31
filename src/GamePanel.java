@@ -24,26 +24,26 @@ public class GamePanel extends JPanel {
         setPreferredSize(new Dimension(GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT));
         setupCustomCursor();
         setupMouseListener();
-        
+
         Timer timer = new Timer(16, e -> repaint());
         timer.start();
     }
-    
+
     public void updateGameTime(long remaining) {
         this.remainingTime = remaining;
     }
-    
+
     public void endGame() {
         if (!gameEnded) {
             gameEnded = true;
             showGameOver();
         }
     }
-    
+
     private void showGameOver() {
         java.util.List<Player> sortedPlayers = new java.util.ArrayList<>(players.values());
         sortedPlayers.sort((p1, p2) -> p2.getScore() - p1.getScore());
-        
+
         StringBuilder message = new StringBuilder("เกมจบ!\n\nผลคะแนน:\n");
         for (int i = 0; i < sortedPlayers.size(); i++) {
             Player p = sortedPlayers.get(i);
@@ -53,7 +53,7 @@ public class GamePanel extends JPanel {
             }
             message.append("\n");
         }
-        
+
         JOptionPane.showMessageDialog(this, message.toString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
         System.exit(0);
     }
@@ -211,14 +211,8 @@ public class GamePanel extends JPanel {
     }
 
     private void drawTimer(Graphics2D g2d) {
-        long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
-        long remaining = GAME_DURATION - elapsed;
-
-        if (remaining < 0)
-            remaining = 0;
-
-        int minutes = (int) (remaining / 60);
-        int seconds = (int) (remaining % 60);
+        int minutes = (int) (remainingTime / 60);
+        int seconds = (int) (remainingTime % 60);
         String timeText = String.format("%02d:%02d", minutes, seconds);
 
         g2d.setFont(FontManager.getFont(Font.BOLD, 48));
@@ -228,9 +222,9 @@ public class GamePanel extends JPanel {
         g2d.setColor(new Color(0, 0, 0, 100));
         g2d.fillRoundRect(GameConfig.WINDOW_WIDTH / 2 - textWidth / 2 - 20, 20, textWidth + 40, 60, 15, 15);
 
-        if (remaining <= 10) {
+        if (remainingTime <= 10) {
             g2d.setColor(Color.RED);
-        } else if (remaining <= 30) {
+        } else if (remainingTime <= 30) {
             g2d.setColor(Color.YELLOW);
         } else {
             g2d.setColor(Color.WHITE);
