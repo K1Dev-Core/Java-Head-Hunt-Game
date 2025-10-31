@@ -49,20 +49,9 @@ public class GamePanel extends JPanel {
     private void showGameOver() {
         java.util.List<Player> sortedPlayers = new java.util.ArrayList<>(players.values());
         sortedPlayers.sort((p1, p2) -> p2.getScore() - p1.getScore());
-
-        StringBuilder message = new StringBuilder("รอบนี้จบแล้ว!\n\nผลคะแนน:\n");
-        for (int i = 0; i < sortedPlayers.size(); i++) {
-            Player p = sortedPlayers.get(i);
-            message.append(String.format("%d. %s: %d คะแนน", i + 1, p.getId(), p.getScore()));
-            if (p.getId().equals(myPlayerId)) {
-                message.append(" (คุณ)");
-            }
-            message.append("\n");
-        }
-        message.append("\n\nเกมใหม่จะเริ่มใน 5 วินาที...");
-
+        
         SwingUtilities.invokeLater(() -> {
-            JOptionPane.showMessageDialog(this, message.toString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
+            new GameOverScreen(sortedPlayers, myPlayerId);
         });
     }
 
