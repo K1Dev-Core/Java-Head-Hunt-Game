@@ -11,8 +11,8 @@ public class HeadObject {
     private double velocityY;
     private String imagePath;
     private transient BufferedImage image;
-    private static final double GRAVITY = 0.5;
-    private static final double BOUNCE = 0.8;
+    private static final double GRAVITY = 0.0;
+    private static final double BOUNCE = 1.0;
     private int width;
     private int height;
 
@@ -38,27 +38,25 @@ public class HeadObject {
     }
 
     public void update() {
-        velocityY += GRAVITY;
         x += velocityX;
         y += velocityY;
 
         if (x < 0) {
             x = 0;
-            velocityX = -velocityX * BOUNCE;
+            velocityX = -velocityX;
         } else if (x > GameConfig.WINDOW_WIDTH - width) {
             x = GameConfig.WINDOW_WIDTH - width;
-            velocityX = -velocityX * BOUNCE;
+            velocityX = -velocityX;
         }
 
         if (y > GameConfig.WINDOW_HEIGHT - height) {
             y = GameConfig.WINDOW_HEIGHT - height;
-            velocityY = -velocityY * BOUNCE;
-            velocityX *= 0.98;
+            velocityY = -velocityY;
         }
 
         if (y < 0) {
             y = 0;
-            velocityY = -velocityY * BOUNCE;
+            velocityY = -velocityY;
         }
     }
 

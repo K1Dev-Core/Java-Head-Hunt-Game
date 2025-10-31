@@ -44,9 +44,9 @@ public class GameServer {
     private void spawnHead() {
         int id = nextHeadId++;
         double x = random.nextInt(1280 - 50);
-        double y = random.nextInt(300);
-        double vx = (random.nextDouble() - 0.5) * 10;
-        double vy = random.nextDouble() * 5;
+        double y = random.nextInt(720 - 50);
+        double vx = (random.nextDouble() - 0.5) * 15;
+        double vy = (random.nextDouble() - 0.5) * 15;
         String imagePath = HEAD_IMAGES[random.nextInt(HEAD_IMAGES.length)];
         
         HeadObject head = new HeadObject(id, x, y, vx, vy, imagePath);
