@@ -31,7 +31,7 @@ public class HeadObject {
             BufferedImage original = ImageIO.read(new File(imagePath));
             width = original.getWidth() * 2;
             height = original.getHeight() * 2;
-            
+
             image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = image.createGraphics();
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);

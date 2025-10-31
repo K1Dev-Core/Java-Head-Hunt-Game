@@ -22,15 +22,15 @@ public class GamePanel extends JPanel {
         loadCrosshairImage();
         setupMouseListener();
         hideCursor();
-        
+
         Timer timer = new Timer(16, e -> repaint());
         timer.start();
     }
-    
+
     private void hideCursor() {
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-            cursorImg, new Point(0, 0), "blank cursor");
+                cursorImg, new Point(0, 0), "blank cursor");
         setCursor(blankCursor);
     }
 
@@ -79,9 +79,9 @@ public class GamePanel extends JPanel {
             int headY = (int) head.getY();
             int width = 72;
             int height = 72;
-            
+
             if (mouseX >= headX && mouseX <= headX + width &&
-                mouseY >= headY && mouseY <= headY + height) {
+                    mouseY >= headY && mouseY <= headY + height) {
                 client.sendHeadHit(head.getId());
                 break;
             }
@@ -186,9 +186,11 @@ public class GamePanel extends JPanel {
         if (crosshairImage != null) {
             int imgW = crosshairImage.getWidth();
             int imgH = crosshairImage.getHeight();
+            int scaledW = imgW / 3;
+            int scaledH = imgH / 3;
 
             if (player.getId().equals(myPlayerId)) {
-                g2d.drawImage(crosshairImage, x - imgW / 2, y - imgH / 2, null);
+                g2d.drawImage(crosshairImage, x - scaledW / 2, y - scaledH / 2, scaledW, scaledH, null);
             } else {
                 BufferedImage tinted = new BufferedImage(imgW, imgH, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D tg = tinted.createGraphics();
@@ -198,7 +200,7 @@ public class GamePanel extends JPanel {
                 tg.fillRect(0, 0, imgW, imgH);
                 tg.dispose();
 
-                g2d.drawImage(tinted, x - imgW / 2, y - imgH / 2, null);
+                g2d.drawImage(tinted, x - scaledW / 2, y - scaledH / 2, scaledW, scaledH, null);
             }
         } else {
             g2d.setColor(player.getColor());
