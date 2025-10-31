@@ -228,6 +228,10 @@ public class GameClient extends JFrame {
                     gamePanel.addPlayer(p);
                 }
                 
+                WindowDragger dragger = new WindowDragger(GameClient.this);
+                gamePanel.addMouseListener(dragger);
+                gamePanel.addMouseMotionListener(dragger);
+                
                 add(gamePanel);
 
                 pack();

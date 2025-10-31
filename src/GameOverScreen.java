@@ -175,6 +175,10 @@ public class GameOverScreen extends JFrame {
             contentPanel.setCursor(normalCursor);
         }
 
+        WindowDragger dragger = new WindowDragger(this);
+        contentPanel.addMouseListener(dragger);
+        contentPanel.addMouseMotionListener(dragger);
+
         contentPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {

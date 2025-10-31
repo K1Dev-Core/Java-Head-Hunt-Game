@@ -42,6 +42,9 @@ public class LoadingScreen extends JFrame {
     
     private void createLoadingPanel() {
         loadingPanel = new LoadingPanel();
+        WindowDragger dragger = new WindowDragger(this);
+        loadingPanel.addMouseListener(dragger);
+        loadingPanel.addMouseMotionListener(dragger);
         add(loadingPanel);
     }
     

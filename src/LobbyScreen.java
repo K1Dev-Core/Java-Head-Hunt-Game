@@ -273,6 +273,10 @@ public class LobbyScreen extends JFrame {
             }
         });
 
+        WindowDragger dragger = new WindowDragger(this);
+        contentPanel.addMouseListener(dragger);
+        contentPanel.addMouseMotionListener(dragger);
+
         contentPanel.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             @Override
             public void mouseMoved(java.awt.event.MouseEvent e) {

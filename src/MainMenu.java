@@ -220,6 +220,10 @@ public class MainMenu {
             }
         });
 
+        WindowDragger dragger = new WindowDragger(mainWindow);
+        contentPanel.addMouseListener(dragger);
+        contentPanel.addMouseMotionListener(dragger);
+
         mainWindow.add(contentPanel);
         mainWindow.setVisible(true);
 
