@@ -153,6 +153,11 @@ public class MainMenu {
                     exitText.setTextColor(new Color(255, 255, 255));
                     exitText.render(g2d);
                 }
+                
+                g2d.setColor(new Color(100, 100, 100, 180));
+                g2d.setFont(FontManager.getThaiFont(18));
+                String versionText = "v " + GitVersion.getVersion();
+                g2d.drawString(versionText, 15, getHeight() - 15);
             }
         };
 

@@ -228,6 +228,7 @@ public class GamePanel extends JPanel {
         drawOtherPlayersCursors(g2d);
         drawScoreboard(g2d);
         drawTimer(g2d);
+        drawVersion(g2d);
         
         if (showingGameOver && fadeAlpha > 0) {
             int alpha = (int)(fadeAlpha * 255);
@@ -359,6 +360,13 @@ public class GamePanel extends JPanel {
 
             y += GameConfig.SCOREBOARD_HEIGHT_PER_PLAYER;
         }
+    }
+    
+    private void drawVersion(Graphics2D g2d) {
+        g2d.setColor(new Color(255, 255, 255, 120));
+        g2d.setFont(FontManager.getFont(Font.PLAIN, 16));
+        String versionText = "v " + GitVersion.getVersion();
+        g2d.drawString(versionText, 15, getHeight() - 15);
     }
 
 }

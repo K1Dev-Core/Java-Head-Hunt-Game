@@ -240,6 +240,11 @@ public class LobbyScreen extends JFrame {
                 MenuElement backArrow = new MenuElement(MenuElement.ElementType.IMAGE, 
                     "res/button/Back-Arrow.png", 194.0, 120.0, 167.0, 123.0);
                 backArrow.render(g2d);
+                
+                g2d.setColor(new Color(100, 100, 100, 180));
+                g2d.setFont(FontManager.getThaiFont(18));
+                String versionText = "v " + GitVersion.getVersion();
+                g2d.drawString(versionText, 15, getHeight() - 15);
             }
         };
 

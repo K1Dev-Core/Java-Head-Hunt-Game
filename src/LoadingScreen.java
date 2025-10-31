@@ -219,6 +219,11 @@ public class LoadingScreen extends JFrame {
             String creditText = "Monster Pop Arena";
             int creditWidth = g2d.getFontMetrics().stringWidth(creditText);
             g2d.drawString(creditText, (getWidth() - creditWidth) / 2, getHeight() - 50);
+            
+            g2d.setColor(new Color(100, 100, 100, 180));
+            g2d.setFont(FontManager.getThaiFont(18));
+            String versionText = "v " + GitVersion.getVersion();
+            g2d.drawString(versionText, 15, getHeight() - 15);
         }
     }
     
