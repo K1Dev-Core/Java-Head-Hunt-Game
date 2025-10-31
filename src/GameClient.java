@@ -98,7 +98,7 @@ public class GameClient extends JFrame {
 
         } else if (message.startsWith("GAMEOVER")) {
             gamePanel.endGame();
-            
+
         } else if (message.startsWith("NEWGAME")) {
             gamePanel.resetGame();
         }

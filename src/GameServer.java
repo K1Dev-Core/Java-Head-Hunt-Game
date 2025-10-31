@@ -54,10 +54,33 @@ public class GameServer {
 
                 if (remaining == 0) {
                     broadcastToAll("GAMEOVER");
-                    gameTimer.cancel();
+                    resetGame();
                 }
             }
         }, 0, 1000);
+    }
+    
+    private void resetGame() {
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000);
+                
+                for (Player player : players.values()) {
+                    player.setScore(0);
+                }
+                
+                heads.clear();
+                nextHeadId = 0;
+                spawnInitialHeads();
+                
+                gameStartTime = System.currentTimeMillis();
+                broadcastToAll("NEWGAME");
+                
+                System.out.println("Game reset - New round started!");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private void spawnInitialHeads() {
