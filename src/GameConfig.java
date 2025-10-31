@@ -52,7 +52,7 @@ public class GameConfig {
     public static final int HEAD_ANIMATION_SPEED = 80;         // ความเร็วแอนิเมชั่น (มิลลิวินาที)
     public static final int SKULL_INDEX = 6;                   // ตำแหน่ง Skull ใน HEAD_ANIMATIONS
     public static final int SKULL_PENALTY = 30;                // คะแนนที่ถูกลดเมื่อคลิก Skull
-    public static final double SKULL_SPAWN_CHANCE = 0.2;       // โอกาสเกิด Skull (20%)
+    public static final double SKULL_SPAWN_CHANCE = 0.4;       // โอกาสเกิด Skull (20%)
     public static final long SKULL_LIFETIME = 3000;            // ระยะเวลาที่ Skull อยู่ (มิลลิวินาที) 3 วินาที
     
     // ============================================

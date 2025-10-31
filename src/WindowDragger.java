@@ -7,7 +7,7 @@ public class WindowDragger extends MouseAdapter {
     private Point initialClick;
     private JFrame frame;
     private boolean isDragging = false;
-    private static final int DRAG_THRESHOLD = 10;
+    private static final int DRAG_THRESHOLD = 100;
     
     public WindowDragger(JFrame frame) {
         this.frame = frame;
