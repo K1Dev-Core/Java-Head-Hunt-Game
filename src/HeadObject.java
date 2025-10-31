@@ -10,11 +10,14 @@ public class HeadObject {
     private double velocityX;
     private double velocityY;
     private String imagePath;
-    private transient BufferedImage image;
-    private static final double GRAVITY = 0.0;
-    private static final double BOUNCE = 1.0;
     private int width;
     private int height;
+    private static BufferedImage[][] animationFrames;
+    private int animationIndex;
+    private int currentFrame = 0;
+    long lastFrameTime;
+    private boolean isSkull;
+    private long spawnTime;
 
     public HeadObject(int id, double x, double y, double velocityX, double velocityY, String imagePath) {
         this.id = id;
@@ -23,23 +26,54 @@ public class HeadObject {
         this.velocityX = velocityX;
         this.velocityY = velocityY;
         this.imagePath = imagePath;
+        this.lastFrameTime = System.currentTimeMillis();
+        this.spawnTime = System.currentTimeMillis();
+        this.currentFrame = 0;
+        
+        try {
+            this.animationIndex = Integer.parseInt(imagePath);
+            if (this.animationIndex < 0 || this.animationIndex >= GameConfig.HEAD_ANIMATIONS.length) {
+                this.animationIndex = 0;
+            }
+        } catch (NumberFormatException e) {
+            this.animationIndex = 0;
+        }
+        
+        this.isSkull = (this.animationIndex == GameConfig.SKULL_INDEX);
         loadImage();
+    }
+    
+    static {
+        try {
+            animationFrames = new BufferedImage[GameConfig.HEAD_ANIMATIONS.length][];
+            for (int i = 0; i < GameConfig.HEAD_ANIMATIONS.length; i++) {
+                GameConfig.AnimationConfig config = GameConfig.HEAD_ANIMATIONS[i];
+                animationFrames[i] = new BufferedImage[config.frameCount];
+                
+                for (int frame = 0; frame < config.frameCount; frame++) {
+                    String framePath = config.folder + (frame + 1) + ".png";
+                    try {
+                        animationFrames[i][frame] = ImageIO.read(new File(framePath));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadImage() {
-        try {
-            BufferedImage original = ImageIO.read(new File(imagePath));
-            width = original.getWidth() * 2;
-            height = original.getHeight() * 2;
-
-            image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = image.createGraphics();
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g2d.drawImage(original, 0, 0, width, height, null);
-            g2d.dispose();
-        } catch (Exception e) {
-            width = 72;
-            height = 72;
+        if (animationFrames != null && animationIndex >= 0 && animationIndex < animationFrames.length 
+            && animationFrames[animationIndex] != null && animationFrames[animationIndex].length > 0 
+            && animationFrames[animationIndex][0] != null) {
+            BufferedImage firstFrame = animationFrames[animationIndex][0];
+            width = firstFrame.getWidth() * GameConfig.HEAD_IMAGE_SCALE;
+            height = firstFrame.getHeight() * GameConfig.HEAD_IMAGE_SCALE;
+        } else {
+            width = GameConfig.HEAD_DEFAULT_SIZE;
+            height = GameConfig.HEAD_DEFAULT_SIZE;
         }
     }
 
@@ -67,11 +101,45 @@ public class HeadObject {
     }
 
     public void render(Graphics2D g2d) {
-        if (image != null) {
-            g2d.drawImage(image, (int) x, (int) y, null);
+        updateAnimation();
+        
+        if (animationFrames != null && animationIndex >= 0 && animationIndex < animationFrames.length 
+            && animationFrames[animationIndex] != null && animationFrames[animationIndex].length > 0) {
+            
+            if (currentFrame >= animationFrames[animationIndex].length) {
+                currentFrame = 0;
+            }
+            
+            BufferedImage frame = animationFrames[animationIndex][currentFrame];
+            if (frame != null) {
+                g2d.drawImage(frame, (int) x, (int) y, width, height, null);
+            } else {
+                g2d.setColor(Color.ORANGE);
+                g2d.fillOval((int) x, (int) y, width, height);
+            }
         } else {
             g2d.setColor(Color.RED);
             g2d.fillOval((int) x, (int) y, width, height);
+        }
+    }
+    
+    private void updateAnimation() {
+        if (animationFrames == null || animationIndex < 0 || animationIndex >= animationFrames.length 
+            || animationFrames[animationIndex] == null || animationFrames[animationIndex].length == 0) {
+            return;
+        }
+        
+        long currentTime = System.currentTimeMillis();
+        
+        if (lastFrameTime == 0) {
+            lastFrameTime = currentTime;
+        }
+        
+        long elapsed = currentTime - lastFrameTime;
+        
+        if (elapsed >= GameConfig.HEAD_ANIMATION_SPEED) {
+            currentFrame = (currentFrame + 1) % animationFrames[animationIndex].length;
+            lastFrameTime = currentTime;
         }
     }
 
@@ -108,19 +176,34 @@ public class HeadObject {
         this.velocityX = vx;
         this.velocityY = vy;
     }
+    
+    public boolean isSkull() {
+        return isSkull;
+    }
+    
+    public boolean isSkullExpired() {
+        if (!isSkull) return false;
+        return (System.currentTimeMillis() - spawnTime) > GameConfig.SKULL_LIFETIME;
+    }
 
     public String toMessage() {
-        return id + "," + x + "," + y + "," + velocityX + "," + velocityY + "," + imagePath;
+        return id + "," + x + "," + y + "," + velocityX + "," + velocityY + "," + imagePath + "," + (isSkull ? "1" : "0");
     }
 
     public static HeadObject fromMessage(String message) {
-        String[] parts = message.split(",", 6);
+        String[] parts = message.split(",", 7);
         int id = Integer.parseInt(parts[0]);
         double x = Double.parseDouble(parts[1]);
         double y = Double.parseDouble(parts[2]);
         double vx = Double.parseDouble(parts[3]);
         double vy = Double.parseDouble(parts[4]);
         String path = parts[5];
-        return new HeadObject(id, x, y, vx, vy, path);
+        HeadObject head = new HeadObject(id, x, y, vx, vy, path);
+        
+        if (parts.length > 6) {
+            head.isSkull = parts[6].equals("1");
+        }
+        
+        return head;
     }
 }

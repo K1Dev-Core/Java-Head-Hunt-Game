@@ -3,42 +3,70 @@ import java.io.*;
 import java.net.*;
 
 public class GameClient extends JFrame {
-    private static final String SERVER_HOST = GameConfig.IP;
-    private static final int SERVER_PORT = 8888;
 
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
     private GamePanel gamePanel;
+    private LobbyScreen lobbyScreen;
+    private String myPlayerId;
+    private java.awt.Color myColor;
+    private boolean gameStarted = false;
+    private java.util.List<String> pendingPlayers = new java.util.ArrayList<>();
+    private java.util.Map<String, Player> allPlayers = new java.util.concurrent.ConcurrentHashMap<>();
 
     public GameClient() {
-        setTitle("Head Hunt Game");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        gamePanel = new GamePanel(this);
-        add(gamePanel);
-
-        pack();
-        setLocationRelativeTo(null);
-        setVisible(true);
-
         connectToServer();
     }
 
     private void connectToServer() {
-        try {
-            socket = new Socket(SERVER_HOST, SERVER_PORT);
-            out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        String serverIP = GameConfig.SERVER_IP;
+        
+        while (true) {
+            try {
+                socket = new Socket(serverIP, GameConfig.SERVER_PORT);
+                out = new PrintWriter(socket.getOutputStream(), true);
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            new Thread(this::receiveMessages).start();
+                new Thread(this::receiveMessages).start();
+                break;
 
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Cannot connect to server. Make sure server is running.",
-                    "Connection Error",
-                    JOptionPane.ERROR_MESSAGE);
-            System.exit(1);
+            } catch (IOException e) {
+                JTextField textField = new JTextField(serverIP);
+                textField.setFont(FontManager.getThaiFont(16));
+                
+                JLabel label = new JLabel("ไม่สามารถเชื่อมต่อ Server ได้\nกรุณาใส่ IP Address:");
+                label.setFont(FontManager.getThaiFont(14));
+                
+                JPanel panel = new JPanel(new java.awt.BorderLayout(5, 5));
+                panel.add(label, java.awt.BorderLayout.NORTH);
+                panel.add(textField, java.awt.BorderLayout.CENTER);
+                
+                int result = JOptionPane.showConfirmDialog(
+                    null,
+                    panel,
+                    "Connect to Server",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.QUESTION_MESSAGE
+                );
+                
+                String input = (result == JOptionPane.OK_OPTION) ? textField.getText() : null;
+                
+                if (input == null || input.trim().isEmpty()) {
+                    int option = JOptionPane.showConfirmDialog(
+                        null,
+                        "You sure want to exit?",
+                        "Sure ?",
+                        JOptionPane.YES_NO_OPTION
+                    );
+                    
+                    if (option == JOptionPane.YES_OPTION) {
+                        System.exit(0);
+                    }
+                } else {
+                    serverIP = input.trim();
+                }
+            }
         }
     }
 
@@ -56,29 +84,87 @@ public class GameClient extends JFrame {
     private void processMessage(String message) {
         if (message.startsWith("ID:")) {
             String[] parts = message.substring(3).split(",");
-            String myId = parts[0];
-            java.awt.Color myColor = new java.awt.Color(Integer.parseInt(parts[1]));
-            gamePanel.setMyPlayerId(myId, myColor);
+            myPlayerId = parts[0];
+            myColor = new java.awt.Color(Integer.parseInt(parts[1]));
+            
+            SwingUtilities.invokeLater(() -> {
+                lobbyScreen = new LobbyScreen(myPlayerId);
+                
+                lobbyScreen.setOnExitCallback(() -> {
+                    exitLobby();
+                });
+                
+                synchronized(pendingPlayers) {
+                    for (String playerId : pendingPlayers) {
+                        lobbyScreen.addPlayer(playerId);
+                    }
+                    pendingPlayers.clear();
+                }
+            });
 
         } else if (message.startsWith("NEW:")) {
             Player player = Player.fromMessage(message.substring(4));
-            gamePanel.addPlayer(player);
+            allPlayers.put(player.getId(), player);
+            
+            if (!gameStarted) {
+                if (lobbyScreen != null) {
+                    lobbyScreen.addPlayer(player.getId());
+                } else {
+                    synchronized(pendingPlayers) {
+                        if (!pendingPlayers.contains(player.getId())) {
+                            pendingPlayers.add(player.getId());
+                        }
+                    }
+                }
+            }
+            if (gamePanel != null) {
+                gamePanel.addPlayer(player);
+            }
+
+        } else if (message.startsWith("PLAYERCOUNT:")) {
+            
+        } else if (message.startsWith("GAMESTARTING")) {
+            if (!gameStarted) {
+                SwingUtilities.invokeLater(() -> {
+                    if (lobbyScreen != null) {
+                        lobbyScreen.setGameStarting(true);
+                    }
+                });
+                startGame();
+            }
+
+        } else if (message.startsWith("GAMEINPROGRESS")) {
+            SwingUtilities.invokeLater(() -> {
+                if (lobbyScreen != null) {
+                    lobbyScreen.setGameInProgress(true);
+                }
+            });
 
         } else if (message.startsWith("UPDATE:")) {
             Player player = Player.fromMessage(message.substring(7));
-            gamePanel.updatePlayer(player);
+            allPlayers.put(player.getId(), player);
+            if (gamePanel != null) {
+                gamePanel.updatePlayer(player);
+            }
 
         } else if (message.startsWith("REMOVE:")) {
             String playerId = message.substring(7);
-            gamePanel.removePlayer(playerId);
+            allPlayers.remove(playerId);
+            if (!gameStarted && lobbyScreen != null) {
+                lobbyScreen.removePlayer(playerId);
+            } else if (gamePanel != null) {
+                gamePanel.removePlayer(playerId);
+            }
 
         } else if (message.startsWith("NEWHEAD:")) {
             HeadObject head = HeadObject.fromMessage(message.substring(8));
-            gamePanel.addHead(head);
+            if (gamePanel != null) {
+                gamePanel.addHead(head);
+            }
 
         } else if (message.startsWith("HEADSYNC:")) {
             String data = message.substring(9);
-            if (!data.isEmpty()) {
+            if (!data.isEmpty() && gamePanel != null) {
                 String[] headMessages = data.split("\\|");
                 for (String headMsg : headMessages) {
                     HeadObject head = HeadObject.fromMessage(headMsg);
@@ -90,18 +176,65 @@ public class GameClient extends JFrame {
             String[] parts = message.substring(6).split(",");
             String playerId = parts[0];
             int score = Integer.parseInt(parts[1]);
-            gamePanel.updatePlayerScore(playerId, score);
+            Player p = allPlayers.get(playerId);
+            if (p != null) {
+                p.setScore(score);
+            }
+            if (gamePanel != null) {
+                gamePanel.updatePlayerScore(playerId, score);
+            }
 
         } else if (message.startsWith("TIME:")) {
             long remaining = Long.parseLong(message.substring(5));
-            gamePanel.updateGameTime(remaining);
+            if (gamePanel != null) {
+                gamePanel.updateGameTime(remaining);
+            }
 
         } else if (message.startsWith("GAMEOVER")) {
-            gamePanel.endGame();
+            if (gamePanel != null) {
+                gamePanel.endGame();
+            }
 
         } else if (message.startsWith("NEWGAME")) {
-            gamePanel.resetGame();
+            if (gamePanel != null) {
+                gamePanel.resetGame();
+            }
         }
+    }
+
+    private void startGame() {
+        if (gameStarted) return;
+        gameStarted = true;
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(GameConfig.GAME_START_DELAY);
+            } catch (InterruptedException e) {
+            }
+
+            SwingUtilities.invokeLater(() -> {
+                if (lobbyScreen != null) {
+                    lobbyScreen.dispose();
+                }
+
+                setTitle("Monster Pop Arena");
+                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                setUndecorated(true);
+
+                gamePanel = new GamePanel(this);
+                gamePanel.setMyPlayerId(myPlayerId, myColor);
+                
+                for (Player p : allPlayers.values()) {
+                    gamePanel.addPlayer(p);
+                }
+                
+                add(gamePanel);
+
+                pack();
+                setLocationRelativeTo(null);
+                setVisible(true);
+            });
+        }).start();
     }
 
     public void sendPosition(int x, int y) {
@@ -116,7 +249,23 @@ public class GameClient extends JFrame {
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(GameClient::new);
+    private void exitLobby() {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+        }
     }
+    
+    public void disconnect() {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+        }
+    }
+
+
 }

@@ -2,18 +2,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 public class GameServer {
-    private static final int PORT = 8888;
-    private static final int MAX_HEADS = 10;
-    private static final String[] HEAD_IMAGES = {
-            "res/head/Jump (36x36).png",
-            "res/head/Hit 2 (36x30)-0.png",
-            "res/head/Hit (30x38)-0.png",
-            "res/head/Hit (32x34)-0.png",
-            "res/head/Jump.png"
-    };
-
     private Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
     private Map<String, Player> players = new ConcurrentHashMap<>();
     private Map<Integer, HeadObject> heads = new ConcurrentHashMap<>();
@@ -23,23 +14,41 @@ public class GameServer {
     private Timer physicsTimer;
     private Timer gameTimer;
     private long gameStartTime;
-    private static final int GAME_DURATION = 120;
+    private boolean gameInProgress = false;
+    private Consumer<String> logCallback = null;
+    
+    public void setLogCallback(Consumer<String> callback) {
+        this.logCallback = callback;
+    }
+    
+    private void log(String message) {
+        System.out.println(message);
+        if (logCallback != null) {
+            logCallback.accept(message);
+        }
+    }
 
     public void start() {
-        System.out.println("Server starting on port " + PORT);
+        log("เซิร์ฟเวอร์เริ่มทำงานที่ Port: " + GameConfig.SERVER_PORT);
         gameStartTime = System.currentTimeMillis();
+        gameInProgress = false;
         spawnInitialHeads();
         startPhysicsLoop();
         startGameTimer();
+        log("สร้าง Heads เริ่มต้นแล้ว");
+        log("รอผู้เล่นเชื่อมต่อ...");
 
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(GameConfig.SERVER_PORT)) {
             while (true) {
                 Socket socket = serverSocket.accept();
+                String clientIP = socket.getInetAddress().getHostAddress();
+                log("มีผู้เล่นเชื่อมต่อจาก: " + clientIP);
                 ClientHandler handler = new ClientHandler(socket);
                 clients.add(handler);
                 new Thread(handler).start();
             }
         } catch (IOException e) {
+            log("เกิดข้อผิดพลาด: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -50,7 +59,7 @@ public class GameServer {
             @Override
             public void run() {
                 long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
-                long remaining = GAME_DURATION - elapsed;
+                long remaining = GameConfig.GAME_DURATION - elapsed;
                 if (remaining < 0)
                     remaining = 0;
                 broadcastToAll("TIME:" + remaining);
@@ -60,13 +69,13 @@ public class GameServer {
                     resetGame();
                 }
             }
-        }, 0, 1000);
+        }, 0, GameConfig.GAME_TIMER_INTERVAL);
     }
 
     private void resetGame() {
         new Thread(() -> {
             try {
-                Thread.sleep(5000);
+                Thread.sleep(GameConfig.GAME_RESET_DELAY);
 
                 for (Player player : players.values()) {
                     player.setScore(0);
@@ -77,28 +86,35 @@ public class GameServer {
                 spawnInitialHeads();
 
                 gameStartTime = System.currentTimeMillis();
+                gameInProgress = false;
                 broadcastToAll("NEWGAME");
 
-                System.out.println("Game reset - New round started!");
+                log("เกมรีเซ็ต - รอบใหม่เริ่มแล้ว!");
             } catch (Exception e) {
-                e.printStackTrace();
             }
         }).start();
     }
 
     private void spawnInitialHeads() {
-        for (int i = 0; i < MAX_HEADS; i++) {
+        for (int i = 0; i < GameConfig.MAX_HEADS; i++) {
             spawnHead();
         }
     }
 
     private void spawnHead() {
         int id = nextHeadId++;
-        double x = random.nextInt(1280 - 50);
-        double y = random.nextInt(720 - 50);
-        double vx = (random.nextDouble() - 0.5) * 6;
-        double vy = (random.nextDouble() - 0.5) * 6;
-        String imagePath = HEAD_IMAGES[random.nextInt(HEAD_IMAGES.length)];
+        double x = random.nextInt(GameConfig.WINDOW_WIDTH - GameConfig.HEAD_SPAWN_MARGIN);
+        double y = random.nextInt(GameConfig.WINDOW_HEIGHT - GameConfig.HEAD_SPAWN_MARGIN);
+        double vx = (random.nextDouble() - 0.5) * GameConfig.HEAD_VELOCITY_RANGE;
+        double vy = (random.nextDouble() - 0.5) * GameConfig.HEAD_VELOCITY_RANGE;
+        
+        int spriteIndex;
+        if (random.nextDouble() < GameConfig.SKULL_SPAWN_CHANCE) {
+            spriteIndex = GameConfig.SKULL_INDEX;
+        } else {
+            spriteIndex = random.nextInt(GameConfig.HEAD_ANIMATIONS.length - 1);
+        }
+        String imagePath = String.valueOf(spriteIndex);
 
         HeadObject head = new HeadObject(id, x, y, vx, vy, imagePath);
         heads.put(id, head);
@@ -106,11 +122,18 @@ public class GameServer {
     }
 
     private void respawnHead(int headId) {
-        double x = random.nextInt(1280 - 50);
-        double y = random.nextInt(720 - 50);
-        double vx = (random.nextDouble() - 0.5) * 6;
-        double vy = (random.nextDouble() - 0.5) * 6;
-        String imagePath = HEAD_IMAGES[random.nextInt(HEAD_IMAGES.length)];
+        double x = random.nextInt(GameConfig.WINDOW_WIDTH - GameConfig.HEAD_SPAWN_MARGIN);
+        double y = random.nextInt(GameConfig.WINDOW_HEIGHT - GameConfig.HEAD_SPAWN_MARGIN);
+        double vx = (random.nextDouble() - 0.5) * GameConfig.HEAD_VELOCITY_RANGE;
+        double vy = (random.nextDouble() - 0.5) * GameConfig.HEAD_VELOCITY_RANGE;
+        
+        int spriteIndex;
+        if (random.nextDouble() < GameConfig.SKULL_SPAWN_CHANCE) {
+            spriteIndex = GameConfig.SKULL_INDEX;
+        } else {
+            spriteIndex = random.nextInt(GameConfig.HEAD_ANIMATIONS.length - 1);
+        }
+        String imagePath = String.valueOf(spriteIndex);
 
         HeadObject head = new HeadObject(headId, x, y, vx, vy, imagePath);
         heads.put(headId, head);
@@ -124,12 +147,25 @@ public class GameServer {
                 updatePhysics();
                 broadcastToAll("HEADSYNC:" + serializeHeads());
             }
-        }, 0, 33);
+        }, 0, GameConfig.PHYSICS_UPDATE_INTERVAL);
     }
 
     private void updatePhysics() {
+        java.util.List<Integer> expiredSkulls = new java.util.ArrayList<>();
+        
         for (HeadObject head : heads.values()) {
             head.update();
+            
+            if (head.isSkullExpired()) {
+                expiredSkulls.add(head.getId());
+            }
+        }
+        
+        for (Integer skullId : expiredSkulls) {
+            log("Skull " + skullId + " หมดอายุ - กำลัง respawn");
+            respawnHead(skullId);
+            broadcastToAll("REMOVEHEAD:" + skullId);
+            broadcastToAll("NEWHEAD:" + heads.get(skullId).toMessage());
         }
     }
 
@@ -155,6 +191,22 @@ public class GameServer {
                 client.sendMessage(message);
             }
         }
+    }
+    
+    private void recalculateNextPlayerNumber() {
+        if (players.isEmpty()) {
+            nextPlayerNumber = 1;
+            return;
+        }
+        
+        int maxPlayerNumber = 0;
+        for (String playerId : players.keySet()) {
+            int playerNum = Integer.parseInt(playerId.substring(1));
+            if (playerNum > maxPlayerNumber) {
+                maxPlayerNumber = playerNum;
+            }
+        }
+        nextPlayerNumber = maxPlayerNumber + 1;
     }
 
     class ClientHandler implements Runnable {
@@ -187,6 +239,8 @@ public class GameServer {
                 Player newPlayer = new Player(playerId, playerColor);
                 players.put(playerId, newPlayer);
 
+                log("ผู้เล่นเข้าร่วม: " + playerId + " (ทั้งหมด: " + players.size() + "/" + GameConfig.MAX_PLAYERS + ")");
+
                 out.println("ID:" + playerId + "," + playerColor.getRGB());
 
                 for (Player p : players.values()) {
@@ -200,6 +254,17 @@ public class GameServer {
                 }
 
                 broadcast("NEW:" + newPlayer.toMessage(), this);
+                
+                broadcastToAll("PLAYERCOUNT:" + players.size());
+                
+                if (gameInProgress) {
+                    out.println("GAMEINPROGRESS");
+                    log("ผู้เล่น " + playerId + " พยายามเข้าในระหว่างเกม");
+                } else if (players.size() >= GameConfig.MIN_PLAYERS && !gameInProgress) {
+                    gameInProgress = true;
+                    broadcastToAll("GAMESTARTING");
+                    log("เกมเริ่มแล้ว! มีผู้เล่น " + players.size() + " คน");
+                }
 
                 String message;
                 while ((message = in.readLine()) != null) {
@@ -219,7 +284,13 @@ public class GameServer {
 
                         if (head != null) {
                             Player player = players.get(playerId);
-                            player.addScore(10);
+                            
+                            if (head.isSkull()) {
+                                player.addScore(-GameConfig.SKULL_PENALTY);
+                                log("ผู้เล่น " + playerId + " ถูก Skull! -" + GameConfig.SKULL_PENALTY + " แต้ม");
+                            } else {
+                                player.addScore(GameConfig.SCORE_PER_HIT);
+                            }
 
                             respawnHead(headId);
 
@@ -228,7 +299,7 @@ public class GameServer {
                     }
                 }
             } catch (IOException e) {
-                System.out.println("Client disconnected: " + playerId);
+                log("ผู้เล่นตัดการเชื่อมต่อ: " + playerId);
             } finally {
                 cleanup();
             }
@@ -239,16 +310,18 @@ public class GameServer {
             if (playerId != null) {
                 players.remove(playerId);
                 broadcast("REMOVE:" + playerId, this);
+                broadcastToAll("PLAYERCOUNT:" + players.size());
+                
+                log("ผู้เล่นออก: " + playerId + " (เหลือ: " + players.size() + " คน)");
+                
+                recalculateNextPlayerNumber();
             }
             try {
                 socket.close();
             } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
 
-    public static void main(String[] args) {
-        new GameServer().start();
-    }
+
 }

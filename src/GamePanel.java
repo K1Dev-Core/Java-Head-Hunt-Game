@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GamePanel extends JPanel {
-    private static final Color BACKGROUND_COLOR = new Color(60, 60, 60);
+    private BufferedImage backgroundImage;
     private Map<String, Player> players = new ConcurrentHashMap<>();
     private Map<Integer, HeadObject> heads = new ConcurrentHashMap<>();
     private String myPlayerId;
@@ -20,13 +20,14 @@ public class GamePanel extends JPanel {
 
     public GamePanel(GameClient client) {
         this.client = client;
-        setBackground(BACKGROUND_COLOR);
+        setBackground(GameConfig.GAME_BACKGROUND_COLOR);
         setPreferredSize(new Dimension(GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT));
-        setupCustomCursor();
+        loadBackgroundImage();
         setupMouseListener();
         setDoubleBuffered(true);
 
-        Timer timer = new Timer(16, e -> repaint());
+
+        Timer timer = new Timer(GameConfig.RENDER_UPDATE_INTERVAL, e -> repaint());
         timer.start();
     }
 
@@ -52,37 +53,27 @@ public class GamePanel extends JPanel {
         sortedPlayers.sort((p1, p2) -> p2.getScore() - p1.getScore());
 
         SwingUtilities.invokeLater(() -> {
-            new GameOverScreen(sortedPlayers, myPlayerId);
+            new GameOverScreen(sortedPlayers, myPlayerId, (GameClient) SwingUtilities.getWindowAncestor(this));
+           
+            Window window = SwingUtilities.getWindowAncestor(this);
+            if (window != null) {
+                window.dispose();
+            }
         });
     }
 
-    private void setupCustomCursor() {
+    private void loadBackgroundImage() {
         try {
-            BufferedImage originalImage = ImageIO.read(new File("res/crosshair182.png"));
-
-            int newWidth = 48;
-            int newHeight = 48;
-
-            BufferedImage scaledImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = scaledImage.createGraphics();
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
-            g2d.dispose();
-
-            int hotSpotX = newWidth / 2;
-            int hotSpotY = newHeight / 2;
-
-            Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                    scaledImage, new Point(hotSpotX, hotSpotY), "custom crosshair");
-            setCursor(customCursor);
-
-            System.out.println("Custom cursor loaded successfully: " + newWidth + "x" + newHeight);
+            backgroundImage = ImageIO.read(new File(GameConfig.BACKGROUND_IMAGE));
         } catch (Exception e) {
-            System.err.println("Cannot load crosshair image: " + e.getMessage());
-            e.printStackTrace();
         }
+    }
+
+    private void setupCustomCursor(int playerNumber) {
+        BufferedImage cursorImg = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+            cursorImg, new Point(0, 0), "blank cursor");
+        setCursor(blankCursor);
     }
 
     private void setupMouseListener() {
@@ -96,11 +87,11 @@ public class GamePanel extends JPanel {
                     if (me != null) {
                         me.setPosition(e.getX(), e.getY());
 
-                        long currentTime = System.currentTimeMillis();
-                        if (currentTime - lastSendTime >= 10) {
-                            client.sendPosition(e.getX(), e.getY());
-                            lastSendTime = currentTime;
-                        }
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastSendTime >= GameConfig.POSITION_SEND_INTERVAL) {
+                        client.sendPosition(e.getX(), e.getY());
+                        lastSendTime = currentTime;
+                    }
                     }
                 }
             }
@@ -123,17 +114,21 @@ public class GamePanel extends JPanel {
         for (HeadObject head : heads.values()) {
             int headX = (int) head.getX();
             int headY = (int) head.getY();
-            int width = 72;
-            int height = 72;
-            int hitboxPadding = 64;
+            int width = GameConfig.HEAD_DEFAULT_SIZE;
+            int height = GameConfig.HEAD_DEFAULT_SIZE;
 
-            if (mouseX >= headX - hitboxPadding && mouseX <= headX + width + hitboxPadding &&
-                    mouseY >= headY - hitboxPadding && mouseY <= headY + height + hitboxPadding) {
-                SoundManager.playSound("res/sfx/bubble-pop.wav");
+            if (mouseX >= headX - GameConfig.HEAD_HITBOX_PADDING && mouseX <= headX + width + GameConfig.HEAD_HITBOX_PADDING &&
+                    mouseY >= headY - GameConfig.HEAD_HITBOX_PADDING && mouseY <= headY + height + GameConfig.HEAD_HITBOX_PADDING) {
+                
+                if (head.isSkull()) {
+                    SoundManager.playSound("res/sfx/Stamp.wav");
+                    comboTexts.add(new ComboText(headX + width / 2, headY + height / 2, -GameConfig.SKULL_PENALTY));
+                } else {
+                    SoundManager.playSound("res/sfx/bubble-pop.wav");
+                    comboTexts.add(new ComboText(headX + width / 2, headY + height / 2, GameConfig.SCORE_PER_HIT));
+                }
 
                 explosions.add(new Explosion(headX + width / 2, headY + height / 2));
-                comboTexts.add(new ComboText(headX + width / 2, headY + height / 2, 10));
-
                 client.sendHeadHit(head.getId());
                 break;
             }
@@ -144,6 +139,9 @@ public class GamePanel extends JPanel {
         this.myPlayerId = id;
         Player me = new Player(id, color);
         players.put(id, me);
+        
+        int playerNumber = Integer.parseInt(id.substring(1));
+        setupCustomCursor(playerNumber);
     }
 
     public void addPlayer(Player player) {
@@ -165,6 +163,10 @@ public class GamePanel extends JPanel {
     public void updateHead(HeadObject head) {
         heads.put(head.getId(), head);
     }
+    
+    public void removeHead(int headId) {
+        heads.remove(headId);
+    }
 
     public void updatePlayerScore(String playerId, int score) {
         Player player = players.get(playerId);
@@ -178,6 +180,11 @@ public class GamePanel extends JPanel {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+ 
+        if (backgroundImage != null) {
+            g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), null);
+        }
 
         for (HeadObject head : heads.values()) {
             head.render(g2d);
@@ -198,17 +205,37 @@ public class GamePanel extends JPanel {
         drawTimer(g2d);
     }
 
+    private static BufferedImage[] otherPlayerCursors = new BufferedImage[4];
+    
+    static {
+        for (int i = 0; i < 4; i++) {
+            try {
+                otherPlayerCursors[i] = ImageIO.read(new File("res/cursor/" + (i + 1) + ".png"));
+            } catch (Exception e) {
+            }
+        }
+    }
+    
     private void drawOtherPlayersCursors(Graphics2D g2d) {
         for (Player player : players.values()) {
-            if (!player.getId().equals(myPlayerId)) {
-                int x = player.getX();
-                int y = player.getY();
-
+            int x = player.getX();
+            int y = player.getY();
+            
+            try {
+                int playerNumber = Integer.parseInt(player.getId().substring(1));
+                if (playerNumber > 0 && playerNumber <= otherPlayerCursors.length 
+                    && otherPlayerCursors[playerNumber - 1] != null) {
+                    BufferedImage cursor = otherPlayerCursors[playerNumber - 1];
+                    int cursorSize = GameConfig.CURSOR_SIZE;
+                    g2d.drawImage(cursor, x - cursorSize/2, y - cursorSize/2, cursorSize, cursorSize, null);
+                }
+            } catch (Exception e) {
                 g2d.setColor(player.getColor());
-                g2d.setStroke(new BasicStroke(3));
-                g2d.drawLine(x - 15, y, x + 15, y);
-                g2d.drawLine(x, y - 15, x, y + 15);
-                g2d.drawOval(x - 20, y - 20, 40, 40);
+                g2d.setStroke(new BasicStroke(GameConfig.OTHER_CURSOR_STROKE_WIDTH));
+                g2d.drawLine(x - GameConfig.OTHER_CURSOR_SIZE, y, x + GameConfig.OTHER_CURSOR_SIZE, y);
+                g2d.drawLine(x, y - GameConfig.OTHER_CURSOR_SIZE, x, y + GameConfig.OTHER_CURSOR_SIZE);
+                g2d.drawOval(x - GameConfig.OTHER_CURSOR_CIRCLE_SIZE, y - GameConfig.OTHER_CURSOR_CIRCLE_SIZE, 
+                            GameConfig.OTHER_CURSOR_CIRCLE_SIZE * 2, GameConfig.OTHER_CURSOR_CIRCLE_SIZE * 2);
             }
         }
     }
@@ -218,16 +245,16 @@ public class GamePanel extends JPanel {
         int seconds = (int) (remainingTime % 60);
         String timeText = String.format("%02d:%02d", minutes, seconds);
 
-        g2d.setFont(FontManager.getFont(Font.BOLD, 48));
+        g2d.setFont(FontManager.getFont(Font.BOLD, GameConfig.TIMER_FONT_SIZE));
         FontMetrics fm = g2d.getFontMetrics();
         int textWidth = fm.stringWidth(timeText);
 
         g2d.setColor(new Color(0, 0, 0, 100));
         g2d.fillRoundRect(GameConfig.WINDOW_WIDTH / 2 - textWidth / 2 - 20, 20, textWidth + 40, 60, 15, 15);
 
-        if (remainingTime <= 10) {
+        if (remainingTime <= GameConfig.TIMER_CRITICAL_THRESHOLD) {
             g2d.setColor(Color.RED);
-        } else if (remainingTime <= 30) {
+        } else if (remainingTime <= GameConfig.TIMER_WARNING_THRESHOLD) {
             g2d.setColor(Color.YELLOW);
         } else {
             g2d.setColor(Color.WHITE);
@@ -238,13 +265,14 @@ public class GamePanel extends JPanel {
 
     private void drawScoreboard(Graphics2D g2d) {
         g2d.setColor(new Color(0, 0, 0, 150));
-        g2d.fillRoundRect(10, 10, 220, 40 + players.size() * 30, 10, 10);
+        g2d.fillRoundRect(GameConfig.SCOREBOARD_X, GameConfig.SCOREBOARD_Y, GameConfig.SCOREBOARD_WIDTH, 
+                         40 + players.size() * GameConfig.SCOREBOARD_HEIGHT_PER_PLAYER, 10, 10);
 
         g2d.setColor(Color.WHITE);
-        g2d.setFont(FontManager.getFont(Font.BOLD, 18));
+        g2d.setFont(FontManager.getFont(Font.BOLD, GameConfig.SCOREBOARD_TITLE_SIZE));
         g2d.drawString("SCOREBOARD", 20, 35);
 
-        g2d.setFont(FontManager.getFont(Font.PLAIN, 14));
+        g2d.setFont(FontManager.getFont(Font.PLAIN, GameConfig.SCOREBOARD_TEXT_SIZE));
         int y = 60;
 
         java.util.List<Player> sortedPlayers = new java.util.ArrayList<>(players.values());
@@ -261,8 +289,17 @@ public class GamePanel extends JPanel {
         for (Player player : sortedPlayers) {
             String displayName = player.getId();
 
-            g2d.setColor(player.getColor());
-            g2d.fillOval(20, y - 10, 15, 15);
+            try {
+                int playerNumber = Integer.parseInt(player.getId().substring(1));
+                if (playerNumber > 0 && playerNumber <= otherPlayerCursors.length 
+                    && otherPlayerCursors[playerNumber - 1] != null) {
+                    BufferedImage cursor = otherPlayerCursors[playerNumber - 1];
+                    g2d.drawImage(cursor, 20, y - 12, 24, 24, null);
+                }
+            } catch (Exception e) {
+                g2d.setColor(player.getColor());
+                g2d.fillOval(20, y - 10, 15, 15);
+            }
 
             g2d.setColor(Color.WHITE);
             String text = displayName + ": " + player.getScore();
@@ -271,9 +308,9 @@ public class GamePanel extends JPanel {
                 text += " (ME)";
             }
 
-            g2d.drawString(text, 45, y + 2);
+            g2d.drawString(text, 48, y + 2);
 
-            y += 30;
+            y += GameConfig.SCOREBOARD_HEIGHT_PER_PLAYER;
         }
     }
 

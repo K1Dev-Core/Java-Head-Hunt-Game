@@ -42,7 +42,7 @@ public class PopupWindowEditor extends JFrame {
     }
 
     private void initializeWindow() {
-        setTitle("Popup Window Editor - Head Hunt Game");
+        setTitle("Popup Window Editor - Monster Pop Arena");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(true);
         setLayout(new BorderLayout());
