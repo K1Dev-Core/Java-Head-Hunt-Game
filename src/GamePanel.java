@@ -103,7 +103,7 @@ public class GamePanel extends JPanel {
 
         addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 if (myPlayerId != null) {
                     checkHeadClick(e.getX(), e.getY());
                 }
@@ -120,7 +120,7 @@ public class GamePanel extends JPanel {
             int headY = (int) head.getY();
             int width = 72;
             int height = 72;
-            int hitboxPadding = 30;
+            int hitboxPadding = 60;
 
             if (mouseX >= headX - hitboxPadding && mouseX <= headX + width + hitboxPadding &&
                     mouseY >= headY - hitboxPadding && mouseY <= headY + height + hitboxPadding) {
