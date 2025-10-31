@@ -24,7 +24,8 @@ public class GamePanel extends JPanel {
         setPreferredSize(new Dimension(GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT));
         setupCustomCursor();
         setupMouseListener();
-
+        setDoubleBuffered(true);
+        
         Timer timer = new Timer(16, e -> repaint());
         timer.start();
     }

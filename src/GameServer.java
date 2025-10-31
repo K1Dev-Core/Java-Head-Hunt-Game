@@ -119,15 +119,15 @@ public class GameServer {
             @Override
             public void run() {
                 updatePhysics();
+                broadcastToAll("HEADSYNC:" + serializeHeads());
             }
-        }, 0, 16);
+        }, 0, 33);
     }
 
     private void updatePhysics() {
         for (HeadObject head : heads.values()) {
             head.update();
         }
-        broadcastToAll("HEADSYNC:" + serializeHeads());
     }
 
     private String serializeHeads() {
