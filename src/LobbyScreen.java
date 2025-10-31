@@ -19,6 +19,9 @@ public class LobbyScreen extends JFrame {
     private boolean gameInProgress = false;
     private Runnable onExitCallback;
     private int teamHover = -1;
+    private float[] teamScales = {1.0f, 1.0f, 1.0f, 1.0f};
+    private float[] targetScales = {1.0f, 1.0f, 1.0f, 1.0f};
+    private Timer scaleAnimationTimer;
 
     public LobbyScreen(String myPlayerId) {
         this.myPlayerId = myPlayerId;
@@ -32,8 +35,25 @@ public class LobbyScreen extends JFrame {
         loadBackgroundImage();
         setupCustomCursor();
         playerIds.add(myPlayerId);
+        startScaleAnimation();
 
         createWindow();
+    }
+    
+    private void startScaleAnimation() {
+        scaleAnimationTimer = new Timer(16, e -> {
+            boolean needsRepaint = false;
+            for (int i = 0; i < 4; i++) {
+                if (Math.abs(teamScales[i] - targetScales[i]) > 0.001f) {
+                    teamScales[i] += (targetScales[i] - teamScales[i]) * 0.2f;
+                    needsRepaint = true;
+                }
+            }
+            if (needsRepaint && contentPanel != null) {
+                contentPanel.repaint();
+            }
+        });
+        scaleAnimationTimer.start();
     }
 
     private void loadBackgroundImage() {
@@ -165,7 +185,7 @@ public class LobbyScreen extends JFrame {
                 howToText2.setTextColor(new Color(0, 0, 0));
                 howToText2.render(g2d);
 
-                MenuElement devText = new MenuElement("Developer", 1352.0, 210.0, 28);
+                MenuElement devText = new MenuElement("Developer", 1352.0, 250.0, 28);
                 devText.setTextColor(new Color(0, 0, 0));
                 devText.render(g2d);
 
@@ -201,16 +221,10 @@ public class LobbyScreen extends JFrame {
                     double w = teamPositions[i][2];
                     double h = teamPositions[i][3];
                     
-                    if (teamHover == i) {
-                        double scale = 1.05;
-                        MenuElement team = new MenuElement(MenuElement.ElementType.IMAGE, 
-                            teamPaths[i], x, y, w * scale, h * scale);
-                        team.render(g2d);
-                    } else {
-                        MenuElement team = new MenuElement(MenuElement.ElementType.IMAGE, 
-                            teamPaths[i], x, y, w, h);
-                        team.render(g2d);
-                    }
+                    float scale = teamScales[i];
+                    MenuElement team = new MenuElement(MenuElement.ElementType.IMAGE, 
+                        teamPaths[i], x, y, w * scale, h * scale);
+                    team.render(g2d);
                 }
 
                 if (backHover) {
@@ -295,11 +309,15 @@ public class LobbyScreen extends JFrame {
                     }
                 }
 
+                for (int i = 0; i < 4; i++) {
+                    targetScales[i] = (teamHover == i) ? 1.08f : 1.0f;
+                }
+
                 if (oldTeamHover != teamHover && teamHover != -1) {
                     SoundManager.playSound("res/sfx/UI_Click_Organic_mono.wav");
                 }
 
-                if (wasBackHover != backHover || oldTeamHover != teamHover) {
+                if (wasBackHover != backHover) {
                     contentPanel.repaint();
                 }
             }
@@ -358,6 +376,14 @@ public class LobbyScreen extends JFrame {
 
     public void setOnExitCallback(Runnable callback) {
         this.onExitCallback = callback;
+    }
+    
+    @Override
+    public void dispose() {
+        if (scaleAnimationTimer != null) {
+            scaleAnimationTimer.stop();
+        }
+        super.dispose();
     }
 }
 

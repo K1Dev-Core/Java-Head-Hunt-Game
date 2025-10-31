@@ -15,6 +15,9 @@ public class GamePanel extends JPanel {
     private GameClient client;
     private long remainingTime = 120;
     private boolean gameEnded = false;
+    private boolean showingGameOver = false;
+    private float fadeAlpha = 0.0f;
+    private long gameEndTime = 0;
     private java.util.List<Explosion> explosions = new java.util.concurrent.CopyOnWriteArrayList<>();
     private java.util.List<ComboText> comboTexts = new java.util.concurrent.CopyOnWriteArrayList<>();
 
@@ -38,12 +41,34 @@ public class GamePanel extends JPanel {
     public void endGame() {
         if (!gameEnded) {
             gameEnded = true;
-            showGameOver();
+            showingGameOver = true;
+            gameEndTime = System.currentTimeMillis();
+            SoundManager.playSound("res/sfx/Last Turn.wav");
+            
+            Timer fadeTimer = new Timer(30, null);
+            fadeTimer.addActionListener(e -> {
+                long elapsed = System.currentTimeMillis() - gameEndTime;
+                
+                if (elapsed < 1000) {
+                    fadeAlpha = Math.min(0.8f, elapsed / 1000.0f * 0.8f);
+                } else if (elapsed < 3000) {
+                    fadeAlpha = 0.8f;
+                } else if (elapsed < 4000) {
+                    fadeAlpha = 0.8f - ((elapsed - 3000) / 1000.0f * 0.8f);
+                } else {
+                    fadeTimer.stop();
+                    showGameOver();
+                }
+                repaint();
+            });
+            fadeTimer.start();
         }
     }
 
     public void resetGame() {
         gameEnded = false;
+        showingGameOver = false;
+        fadeAlpha = 0.0f;
         explosions.clear();
         comboTexts.clear();
     }
@@ -203,6 +228,28 @@ public class GamePanel extends JPanel {
         drawOtherPlayersCursors(g2d);
         drawScoreboard(g2d);
         drawTimer(g2d);
+        
+        if (showingGameOver && fadeAlpha > 0) {
+            int alpha = (int)(fadeAlpha * 255);
+            g2d.setColor(new Color(0, 0, 0, alpha));
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+            
+            if (fadeAlpha > 0.3f) {
+                g2d.setFont(FontManager.getFont(Font.BOLD, 120));
+                String gameOverText = "จบแล้ว";
+                FontMetrics fm = g2d.getFontMetrics();
+                int textWidth = fm.stringWidth(gameOverText);
+                int textHeight = fm.getHeight();
+                
+                float textAlphaFloat = Math.min(1.0f, (fadeAlpha - 0.3f) / 0.5f);
+                int textAlpha = (int)(textAlphaFloat * 255);
+                g2d.setColor(new Color(255, 255, 255, textAlpha));
+                
+                int x = (getWidth() - textWidth) / 2;
+                int y = (getHeight() - textHeight) / 2 + fm.getAscent();
+                g2d.drawString(gameOverText, x, y);
+            }
+        }
     }
 
     private static BufferedImage[] otherPlayerCursors = new BufferedImage[4];
