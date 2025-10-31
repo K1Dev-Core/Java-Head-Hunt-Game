@@ -49,7 +49,7 @@ public class GamePanel extends JPanel {
     private void showGameOver() {
         java.util.List<Player> sortedPlayers = new java.util.ArrayList<>(players.values());
         sortedPlayers.sort((p1, p2) -> p2.getScore() - p1.getScore());
-        
+
         SwingUtilities.invokeLater(() -> {
             new GameOverScreen(sortedPlayers, myPlayerId);
         });
