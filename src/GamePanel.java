@@ -13,6 +13,9 @@ public class GamePanel extends JPanel {
     private Map<Integer, HeadObject> heads = new ConcurrentHashMap<>();
     private String myPlayerId;
     private GameClient client;
+    private long gameStartTime;
+    private static final int GAME_DURATION = 120;
+    private boolean gameEnded = false;
 
     public GamePanel(GameClient client) {
         this.client = client;
@@ -20,15 +23,47 @@ public class GamePanel extends JPanel {
         setPreferredSize(new Dimension(GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT));
         setupCustomCursor();
         setupMouseListener();
+        gameStartTime = System.currentTimeMillis();
         
-        Timer timer = new Timer(16, e -> repaint());
+        Timer timer = new Timer(16, e -> {
+            checkGameTime();
+            repaint();
+        });
         timer.start();
     }
     
+    private void checkGameTime() {
+        if (!gameEnded) {
+            long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
+            if (elapsed >= GAME_DURATION) {
+                gameEnded = true;
+                showGameOver();
+            }
+        }
+    }
+    
+    private void showGameOver() {
+        java.util.List<Player> sortedPlayers = new java.util.ArrayList<>(players.values());
+        sortedPlayers.sort((p1, p2) -> p2.getScore() - p1.getScore());
+        
+        StringBuilder message = new StringBuilder("เกมจบ!\n\nผลคะแนน:\n");
+        for (int i = 0; i < sortedPlayers.size(); i++) {
+            Player p = sortedPlayers.get(i);
+            message.append(String.format("%d. %s: %d คะแนน", i + 1, p.getId(), p.getScore()));
+            if (p.getId().equals(myPlayerId)) {
+                message.append(" (คุณ)");
+            }
+            message.append("\n");
+        }
+        
+        JOptionPane.showMessageDialog(this, message.toString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
+        System.exit(0);
+    }
+
     private void setupCustomCursor() {
         try {
             BufferedImage originalImage = ImageIO.read(new File("res/crosshair182.png"));
-            int scale = 3;
+            int scale = 2;
             int newWidth = originalImage.getWidth() / scale;
             int newHeight = originalImage.getHeight() / scale;
             
@@ -81,14 +116,17 @@ public class GamePanel extends JPanel {
     }
 
     private void checkHeadClick(int mouseX, int mouseY) {
+        if (gameEnded) return;
+        
         for (HeadObject head : heads.values()) {
             int headX = (int) head.getX();
             int headY = (int) head.getY();
             int width = 72;
             int height = 72;
-
-            if (mouseX >= headX && mouseX <= headX + width &&
-                    mouseY >= headY && mouseY <= headY + height) {
+            int hitboxPadding = 30;
+            
+            if (mouseX >= headX - hitboxPadding && mouseX <= headX + width + hitboxPadding &&
+                mouseY >= headY - hitboxPadding && mouseY <= headY + height + hitboxPadding) {
                 SoundManager.playSound("res/sfx/bubble-pop.wav");
                 client.sendHeadHit(head.getId());
                 break;
@@ -139,7 +177,52 @@ public class GamePanel extends JPanel {
             head.render(g2d);
         }
         
+        drawOtherPlayersCursors(g2d);
         drawScoreboard(g2d);
+        drawTimer(g2d);
+    }
+    
+    private void drawOtherPlayersCursors(Graphics2D g2d) {
+        for (Player player : players.values()) {
+            if (!player.getId().equals(myPlayerId)) {
+                int x = player.getX();
+                int y = player.getY();
+                
+                g2d.setColor(player.getColor());
+                g2d.setStroke(new BasicStroke(3));
+                g2d.drawLine(x - 15, y, x + 15, y);
+                g2d.drawLine(x, y - 15, x, y + 15);
+                g2d.drawOval(x - 20, y - 20, 40, 40);
+            }
+        }
+    }
+    
+    private void drawTimer(Graphics2D g2d) {
+        long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
+        long remaining = GAME_DURATION - elapsed;
+        
+        if (remaining < 0) remaining = 0;
+        
+        int minutes = (int) (remaining / 60);
+        int seconds = (int) (remaining % 60);
+        String timeText = String.format("%02d:%02d", minutes, seconds);
+        
+        g2d.setFont(FontManager.getFont(Font.BOLD, 48));
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(timeText);
+        
+        g2d.setColor(new Color(0, 0, 0, 100));
+        g2d.fillRoundRect(GameConfig.WINDOW_WIDTH / 2 - textWidth / 2 - 20, 20, textWidth + 40, 60, 15, 15);
+        
+        if (remaining <= 10) {
+            g2d.setColor(Color.RED);
+        } else if (remaining <= 30) {
+            g2d.setColor(Color.YELLOW);
+        } else {
+            g2d.setColor(Color.WHITE);
+        }
+        
+        g2d.drawString(timeText, GameConfig.WINDOW_WIDTH / 2 - textWidth / 2, 65);
     }
 
     private void drawScoreboard(Graphics2D g2d) {
