@@ -15,6 +15,9 @@ public class GameOverScreen extends JFrame {
     private PopupWindowConfig config;
     private String myPlayerId;
     private int[] yPositions = { 299, 372, 444, 517 };
+    private MenuElement exitButton;
+    private boolean exitHover = false;
+    private JPanel contentPanel;
 
     public GameOverScreen(List<Player> sortedPlayers, String myPlayerId) {
         this.myPlayerId = myPlayerId;
@@ -46,9 +49,7 @@ public class GameOverScreen extends JFrame {
             targetScores.put(p, p.getScore());
         }
 
-        MenuElement exitButton = new MenuElement(MenuElement.ElementType.IMAGE, "res/5.png", 1176.0, 675.0, 161.7,
-                46.7);
-        staticElements.add(exitButton);
+        exitButton = new MenuElement(MenuElement.ElementType.IMAGE, "res/5.png", 640.0, 600.0, 200.0, 60.0);
 
         MenuElement img4 = new MenuElement(MenuElement.ElementType.IMAGE, "res/head/Jump (36x36).png", 973.0, 588.0,
                 180.0, 180.0);
@@ -69,22 +70,22 @@ public class GameOverScreen extends JFrame {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
+
                 g2d.setColor(config.backgroundColor);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
-                
+
                 for (MenuElement element : staticElements) {
                     element.render(g2d);
                 }
-                
+
                 for (MenuElement element : dynamicTextElements) {
                     element.render(g2d);
                 }
-                
+
                 if (exitHover) {
-                    MenuElement scaled = new MenuElement(MenuElement.ElementType.IMAGE, 
-                        exitButton.getImagePath(), exitButton.getX(), exitButton.getY(), 
-                        exitButton.getWidth() * 1.1, exitButton.getHeight() * 1.1);
+                    MenuElement scaled = new MenuElement(MenuElement.ElementType.IMAGE,
+                            exitButton.getImagePath(), exitButton.getX(), exitButton.getY(),
+                            exitButton.getWidth() * 1.1, exitButton.getHeight() * 1.1);
                     scaled.render(g2d);
                 } else {
                     exitButton.render(g2d);
@@ -98,27 +99,27 @@ public class GameOverScreen extends JFrame {
             public void mouseClicked(MouseEvent e) {
                 int x = e.getX();
                 int y = e.getY();
-                
+
                 if (isInsideButton(x, y, 640.0, 600.0, 200.0, 60.0)) {
                     dispose();
                     SwingUtilities.invokeLater(MainMenu::new);
                 }
             }
         });
-        
+
         contentPanel.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
                 int x = e.getX();
                 int y = e.getY();
-                
+
                 boolean wasHover = exitHover;
                 exitHover = isInsideButton(x, y, 640.0, 600.0, 200.0, 60.0);
-                
+
                 if (!wasHover && exitHover) {
                     SoundManager.playSound("res/sfx/UI_Click_Organic_mono.wav");
                 }
-                
+
                 if (wasHover != exitHover) {
                     contentPanel.repaint();
                 }

@@ -25,7 +25,7 @@ public class GamePanel extends JPanel {
         setupCustomCursor();
         setupMouseListener();
         setDoubleBuffered(true);
-        
+
         Timer timer = new Timer(16, e -> repaint());
         timer.start();
     }
