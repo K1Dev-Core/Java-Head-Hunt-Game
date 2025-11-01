@@ -40,13 +40,13 @@ public class GameConfig {
     }
     
     public static final AnimationConfig[] HEAD_ANIMATIONS = {
-        new AnimationConfig("res/head/AngryPig/", 16),
-        new AnimationConfig("res/head/BlueBird/", 9),
-        new AnimationConfig("res/head/Bunny/", 12),
-        new AnimationConfig("res/head/Duck/", 10),
-        new AnimationConfig("res/head/FatBird/", 8),
-        new AnimationConfig("res/head/Slime/", 10),
-        new AnimationConfig("res/head/Skull/", 4)
+        new AnimationConfig("res/head/AngryPig/", 16),    // 1-16.png
+        new AnimationConfig("res/head/BlueBird/", 9),     // 1-9.png
+        new AnimationConfig("res/head/Bunny/", 12),       // 1-12.png
+        new AnimationConfig("res/head/Duck/", 10),        // 1-10.png
+        new AnimationConfig("res/head/FatBird/", 8),      // 1-8.png
+        new AnimationConfig("res/head/Slime/", 10),       // 1-10.png
+        new AnimationConfig("res/head/Skull/", 4)         // 1-4.png (ลบคะแนน)
     };
     
     public static final int HEAD_ANIMATION_SPEED = 80;         // ความเร็วแอนิเมชั่น (มิลลิวินาที)
