@@ -29,7 +29,7 @@ public class HeadObject {
         this.lastFrameTime = System.currentTimeMillis();
         this.spawnTime = System.currentTimeMillis();
         this.currentFrame = 0;
-        
+
         try {
             this.animationIndex = Integer.parseInt(imagePath);
             if (this.animationIndex < 0 || this.animationIndex >= GameConfig.HEAD_ANIMATIONS.length) {
@@ -38,11 +38,11 @@ public class HeadObject {
         } catch (NumberFormatException e) {
             this.animationIndex = 0;
         }
-        
+
         this.isSkull = (this.animationIndex == GameConfig.SKULL_INDEX);
         loadImage();
     }
-    
+
     static {
         try {
             System.out.println("🎬 กำลังโหลดเฟรมอนิเมชั่น...");
@@ -50,7 +50,7 @@ public class HeadObject {
             for (int i = 0; i < GameConfig.HEAD_ANIMATIONS.length; i++) {
                 GameConfig.AnimationConfig config = GameConfig.HEAD_ANIMATIONS[i];
                 animationFrames[i] = new BufferedImage[config.frameCount];
-                
+
                 int loadedFrames = 0;
                 for (int frame = 0; frame < config.frameCount; frame++) {
                     String framePath = config.folder + (frame + 1) + ".png";
@@ -67,7 +67,8 @@ public class HeadObject {
                         e.printStackTrace();
                     }
                 }
-                System.out.println("✅ โหลด " + config.folder + " สำเร็จ: " + loadedFrames + "/" + config.frameCount + " เฟรม");
+                System.out.println(
+                        "✅ โหลด " + config.folder + " สำเร็จ: " + loadedFrames + "/" + config.frameCount + " เฟรม");
             }
             System.out.println("🎬 โหลดเฟรมอนิเมชั่นเสร็จสิ้น!");
         } catch (Exception e) {
@@ -114,14 +115,14 @@ public class HeadObject {
 
     public void render(Graphics2D g2d) {
         updateAnimation();
-        
-        if (animationFrames != null && animationIndex >= 0 && animationIndex < animationFrames.length 
-            && animationFrames[animationIndex] != null && animationFrames[animationIndex].length > 0) {
-            
+
+        if (animationFrames != null && animationIndex >= 0 && animationIndex < animationFrames.length
+                && animationFrames[animationIndex] != null && animationFrames[animationIndex].length > 0) {
+
             if (currentFrame >= animationFrames[animationIndex].length) {
                 currentFrame = 0;
             }
-            
+
             BufferedImage frame = animationFrames[animationIndex][currentFrame];
             if (frame != null) {
                 g2d.drawImage(frame, (int) x, (int) y, width, height, null);
@@ -134,7 +135,7 @@ public class HeadObject {
             g2d.fillOval((int) x, (int) y, width, height);
         }
     }
-    
+
     private void updateAnimation() {
         if (animationFrames == null || animationIndex < 0 || animationIndex >= animationFrames.length 
             || animationFrames[animationIndex] == null || animationFrames[animationIndex].length == 0) {
@@ -189,17 +190,30 @@ public class HeadObject {
         this.velocityY = vy;
     }
     
+    /**
+     * อัพเดทจาก sync message โดยไม่ทำลาย animation state
+     */
+    public void updateFromSync(double x, double y, double vx, double vy) {
+        this.x = x;
+        this.y = y;
+        this.velocityX = vx;
+        this.velocityY = vy;
+        // ไม่ทำอะไรกับ lastFrameTime และ currentFrame เพื่อให้อนิเมชั่นเล่นต่อได้
+    }
+
     public boolean isSkull() {
         return isSkull;
     }
-    
+
     public boolean isSkullExpired() {
-        if (!isSkull) return false;
+        if (!isSkull)
+            return false;
         return (System.currentTimeMillis() - spawnTime) > GameConfig.SKULL_LIFETIME;
     }
 
     public String toMessage() {
-        return id + "," + x + "," + y + "," + velocityX + "," + velocityY + "," + imagePath + "," + (isSkull ? "1" : "0");
+        return id + "," + x + "," + y + "," + velocityX + "," + velocityY + "," + imagePath + ","
+                + (isSkull ? "1" : "0");
     }
 
     public static HeadObject fromMessage(String message) {
@@ -211,11 +225,11 @@ public class HeadObject {
         double vy = Double.parseDouble(parts[4]);
         String path = parts[5];
         HeadObject head = new HeadObject(id, x, y, vx, vy, path);
-        
+
         if (parts.length > 6) {
             head.isSkull = parts[6].equals("1");
         }
-        
+
         return head;
     }
 }

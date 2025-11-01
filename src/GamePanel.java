@@ -29,7 +29,6 @@ public class GamePanel extends JPanel {
         setupMouseListener();
         setDoubleBuffered(true);
 
-
         Timer timer = new Timer(GameConfig.RENDER_UPDATE_INTERVAL, e -> repaint());
         timer.start();
     }
@@ -44,11 +43,11 @@ public class GamePanel extends JPanel {
             showingGameOver = true;
             gameEndTime = System.currentTimeMillis();
             SoundManager.playSound("res/sfx/Last Turn.wav");
-            
+
             Timer fadeTimer = new Timer(30, null);
             fadeTimer.addActionListener(e -> {
                 long elapsed = System.currentTimeMillis() - gameEndTime;
-                
+
                 if (elapsed < 1000) {
                     fadeAlpha = Math.min(0.8f, elapsed / 1000.0f * 0.8f);
                 } else if (elapsed < 3000) {
@@ -79,7 +78,7 @@ public class GamePanel extends JPanel {
 
         SwingUtilities.invokeLater(() -> {
             new GameOverScreen(sortedPlayers, myPlayerId, (GameClient) SwingUtilities.getWindowAncestor(this));
-           
+
             Window window = SwingUtilities.getWindowAncestor(this);
             if (window != null) {
                 window.dispose();
@@ -97,7 +96,7 @@ public class GamePanel extends JPanel {
     private void setupCustomCursor(int playerNumber) {
         BufferedImage cursorImg = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-            cursorImg, new Point(0, 0), "blank cursor");
+                cursorImg, new Point(0, 0), "blank cursor");
         setCursor(blankCursor);
     }
 
@@ -112,11 +111,11 @@ public class GamePanel extends JPanel {
                     if (me != null) {
                         me.setPosition(e.getX(), e.getY());
 
-                    long currentTime = System.currentTimeMillis();
-                    if (currentTime - lastSendTime >= GameConfig.POSITION_SEND_INTERVAL) {
-                        client.sendPosition(e.getX(), e.getY());
-                        lastSendTime = currentTime;
-                    }
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime - lastSendTime >= GameConfig.POSITION_SEND_INTERVAL) {
+                            client.sendPosition(e.getX(), e.getY());
+                            lastSendTime = currentTime;
+                        }
                     }
                 }
             }
@@ -142,19 +141,21 @@ public class GamePanel extends JPanel {
             int width = GameConfig.HEAD_DEFAULT_SIZE;
             int height = GameConfig.HEAD_DEFAULT_SIZE;
 
-            if (mouseX >= headX - GameConfig.HEAD_HITBOX_PADDING && mouseX <= headX + width + GameConfig.HEAD_HITBOX_PADDING &&
-                    mouseY >= headY - GameConfig.HEAD_HITBOX_PADDING && mouseY <= headY + height + GameConfig.HEAD_HITBOX_PADDING) {
-                
+            if (mouseX >= headX - GameConfig.HEAD_HITBOX_PADDING
+                    && mouseX <= headX + width + GameConfig.HEAD_HITBOX_PADDING &&
+                    mouseY >= headY - GameConfig.HEAD_HITBOX_PADDING
+                    && mouseY <= headY + height + GameConfig.HEAD_HITBOX_PADDING) {
+
                 client.sendHeadHit(head.getId());
                 break;
             }
         }
     }
-    
+
     public void showExplosion(int x, int y, boolean isSkull) {
         int width = GameConfig.HEAD_DEFAULT_SIZE;
         int height = GameConfig.HEAD_DEFAULT_SIZE;
-        
+
         if (isSkull) {
             SoundManager.playSound("res/sfx/Stamp.wav");
             comboTexts.add(new ComboText(x + width / 2, y + height / 2, -GameConfig.SKULL_PENALTY));
@@ -162,7 +163,7 @@ public class GamePanel extends JPanel {
             SoundManager.playSound("res/sfx/bubble-pop.wav");
             comboTexts.add(new ComboText(x + width / 2, y + height / 2, GameConfig.SCORE_PER_HIT));
         }
-        
+
         explosions.add(new Explosion(x + width / 2, y + height / 2));
     }
 
@@ -170,7 +171,7 @@ public class GamePanel extends JPanel {
         this.myPlayerId = id;
         Player me = new Player(id, color);
         players.put(id, me);
-        
+
         int playerNumber = Integer.parseInt(id.substring(1));
         setupCustomCursor(playerNumber);
     }
@@ -191,10 +192,18 @@ public class GamePanel extends JPanel {
         heads.put(head.getId(), head);
     }
 
-    public void updateHead(HeadObject head) {
-        heads.put(head.getId(), head);
+    public void updateHead(HeadObject newHead) {
+        HeadObject existingHead = heads.get(newHead.getId());
+        if (existingHead != null) {
+            // อัพเดท existing head โดยไม่ทำลาย animation state
+            existingHead.updateFromSync(newHead.getX(), newHead.getY(), 
+                                       newHead.getVelocityX(), newHead.getVelocityY());
+        } else {
+            // ถ้ายังไม่มี ให้เพิ่มใหม่
+            heads.put(newHead.getId(), newHead);
+        }
     }
-    
+
     public void removeHead(int headId) {
         heads.remove(headId);
     }
@@ -212,7 +221,6 @@ public class GamePanel extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
- 
         if (backgroundImage != null) {
             g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), null);
         }
@@ -235,23 +243,23 @@ public class GamePanel extends JPanel {
         drawScoreboard(g2d);
         drawTimer(g2d);
         drawVersion(g2d);
-        
+
         if (showingGameOver && fadeAlpha > 0) {
-            int alpha = (int)(fadeAlpha * 255);
+            int alpha = (int) (fadeAlpha * 255);
             g2d.setColor(new Color(0, 0, 0, alpha));
             g2d.fillRect(0, 0, getWidth(), getHeight());
-            
+
             if (fadeAlpha > 0.3f) {
                 g2d.setFont(FontManager.getFont(Font.BOLD, 120));
                 String gameOverText = "จบแล้ว";
                 FontMetrics fm = g2d.getFontMetrics();
                 int textWidth = fm.stringWidth(gameOverText);
                 int textHeight = fm.getHeight();
-                
+
                 float textAlphaFloat = Math.min(1.0f, (fadeAlpha - 0.3f) / 0.5f);
-                int textAlpha = (int)(textAlphaFloat * 255);
+                int textAlpha = (int) (textAlphaFloat * 255);
                 g2d.setColor(new Color(255, 255, 255, textAlpha));
-                
+
                 int x = (getWidth() - textWidth) / 2;
                 int y = (getHeight() - textHeight) / 2 + fm.getAscent();
                 g2d.drawString(gameOverText, x, y);
@@ -260,7 +268,7 @@ public class GamePanel extends JPanel {
     }
 
     private static BufferedImage[] otherPlayerCursors = new BufferedImage[4];
-    
+
     static {
         for (int i = 0; i < 4; i++) {
             try {
@@ -269,27 +277,27 @@ public class GamePanel extends JPanel {
             }
         }
     }
-    
+
     private void drawOtherPlayersCursors(Graphics2D g2d) {
         for (Player player : players.values()) {
             int x = player.getX();
             int y = player.getY();
-            
+
             try {
                 int playerNumber = Integer.parseInt(player.getId().substring(1));
-                if (playerNumber > 0 && playerNumber <= otherPlayerCursors.length 
-                    && otherPlayerCursors[playerNumber - 1] != null) {
+                if (playerNumber > 0 && playerNumber <= otherPlayerCursors.length
+                        && otherPlayerCursors[playerNumber - 1] != null) {
                     BufferedImage cursor = otherPlayerCursors[playerNumber - 1];
                     int cursorSize = GameConfig.CURSOR_SIZE;
-                    g2d.drawImage(cursor, x - cursorSize/2, y - cursorSize/2, cursorSize, cursorSize, null);
+                    g2d.drawImage(cursor, x - cursorSize / 2, y - cursorSize / 2, cursorSize, cursorSize, null);
                 }
             } catch (Exception e) {
                 g2d.setColor(player.getColor());
                 g2d.setStroke(new BasicStroke(GameConfig.OTHER_CURSOR_STROKE_WIDTH));
                 g2d.drawLine(x - GameConfig.OTHER_CURSOR_SIZE, y, x + GameConfig.OTHER_CURSOR_SIZE, y);
                 g2d.drawLine(x, y - GameConfig.OTHER_CURSOR_SIZE, x, y + GameConfig.OTHER_CURSOR_SIZE);
-                g2d.drawOval(x - GameConfig.OTHER_CURSOR_CIRCLE_SIZE, y - GameConfig.OTHER_CURSOR_CIRCLE_SIZE, 
-                            GameConfig.OTHER_CURSOR_CIRCLE_SIZE * 2, GameConfig.OTHER_CURSOR_CIRCLE_SIZE * 2);
+                g2d.drawOval(x - GameConfig.OTHER_CURSOR_CIRCLE_SIZE, y - GameConfig.OTHER_CURSOR_CIRCLE_SIZE,
+                        GameConfig.OTHER_CURSOR_CIRCLE_SIZE * 2, GameConfig.OTHER_CURSOR_CIRCLE_SIZE * 2);
             }
         }
     }
@@ -319,8 +327,8 @@ public class GamePanel extends JPanel {
 
     private void drawScoreboard(Graphics2D g2d) {
         g2d.setColor(new Color(0, 0, 0, 150));
-        g2d.fillRoundRect(GameConfig.SCOREBOARD_X, GameConfig.SCOREBOARD_Y, GameConfig.SCOREBOARD_WIDTH, 
-                         40 + players.size() * GameConfig.SCOREBOARD_HEIGHT_PER_PLAYER, 10, 10);
+        g2d.fillRoundRect(GameConfig.SCOREBOARD_X, GameConfig.SCOREBOARD_Y, GameConfig.SCOREBOARD_WIDTH,
+                40 + players.size() * GameConfig.SCOREBOARD_HEIGHT_PER_PLAYER, 10, 10);
 
         g2d.setColor(Color.WHITE);
         g2d.setFont(FontManager.getFont(Font.BOLD, GameConfig.SCOREBOARD_TITLE_SIZE));
@@ -345,8 +353,8 @@ public class GamePanel extends JPanel {
 
             try {
                 int playerNumber = Integer.parseInt(player.getId().substring(1));
-                if (playerNumber > 0 && playerNumber <= otherPlayerCursors.length 
-                    && otherPlayerCursors[playerNumber - 1] != null) {
+                if (playerNumber > 0 && playerNumber <= otherPlayerCursors.length
+                        && otherPlayerCursors[playerNumber - 1] != null) {
                     BufferedImage cursor = otherPlayerCursors[playerNumber - 1];
                     g2d.drawImage(cursor, 20, y - 12, 24, 24, null);
                 }
@@ -367,7 +375,7 @@ public class GamePanel extends JPanel {
             y += GameConfig.SCOREBOARD_HEIGHT_PER_PLAYER;
         }
     }
-    
+
     private void drawVersion(Graphics2D g2d) {
         g2d.setColor(new Color(255, 255, 255, 120));
         g2d.setFont(FontManager.getFont(Font.PLAIN, 16));
