@@ -134,18 +134,15 @@ public class GamePanel extends JPanel {
     private void checkHeadClick(int mouseX, int mouseY) {
         if (gameEnded)
             return;
-
         for (HeadObject head : heads.values()) {
             int headX = (int) head.getX();
             int headY = (int) head.getY();
-            int width = GameConfig.HEAD_DEFAULT_SIZE;
-            int height = GameConfig.HEAD_DEFAULT_SIZE;
-
+            int width = head.getWidth();
+            int height = head.getHeight();
             if (mouseX >= headX - GameConfig.HEAD_HITBOX_PADDING
                     && mouseX <= headX + width + GameConfig.HEAD_HITBOX_PADDING &&
                     mouseY >= headY - GameConfig.HEAD_HITBOX_PADDING
                     && mouseY <= headY + height + GameConfig.HEAD_HITBOX_PADDING) {
-
                 client.sendHeadHit(head.getId());
                 break;
             }
@@ -153,9 +150,8 @@ public class GamePanel extends JPanel {
     }
 
     public void showExplosion(int x, int y, boolean isSkull) {
-        int width = GameConfig.HEAD_DEFAULT_SIZE;
-        int height = GameConfig.HEAD_DEFAULT_SIZE;
-
+        int width = 70;
+        int height = 70;
         if (isSkull) {
             SoundManager.playSound("res/sfx/Stamp.wav");
             comboTexts.add(new ComboText(x + width / 2, y + height / 2, -GameConfig.SKULL_PENALTY));
@@ -163,7 +159,6 @@ public class GamePanel extends JPanel {
             SoundManager.playSound("res/sfx/bubble-pop.wav");
             comboTexts.add(new ComboText(x + width / 2, y + height / 2, GameConfig.SCORE_PER_HIT));
         }
-
         explosions.add(new Explosion(x + width / 2, y + height / 2));
     }
 
@@ -195,11 +190,10 @@ public class GamePanel extends JPanel {
     public void updateHead(HeadObject newHead) {
         HeadObject existingHead = heads.get(newHead.getId());
         if (existingHead != null) {
-            // อัพเดท existing head โดยไม่ทำลาย animation state
             existingHead.updateFromSync(newHead.getX(), newHead.getY(), 
-                                       newHead.getVelocityX(), newHead.getVelocityY());
+                                       newHead.getVelocityX(), newHead.getVelocityY(),
+                                       newHead.getImagePath(), newHead.isSkull());
         } else {
-            // ถ้ายังไม่มี ให้เพิ่มใหม่
             heads.put(newHead.getId(), newHead);
         }
     }

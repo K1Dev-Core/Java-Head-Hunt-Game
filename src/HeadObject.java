@@ -45,42 +45,31 @@ public class HeadObject {
 
     static {
         try {
-            System.out.println("🎬 กำลังโหลดเฟรมอนิเมชั่น...");
             animationFrames = new BufferedImage[GameConfig.HEAD_ANIMATIONS.length][];
             for (int i = 0; i < GameConfig.HEAD_ANIMATIONS.length; i++) {
                 GameConfig.AnimationConfig config = GameConfig.HEAD_ANIMATIONS[i];
                 animationFrames[i] = new BufferedImage[config.frameCount];
-
-                int loadedFrames = 0;
                 for (int frame = 0; frame < config.frameCount; frame++) {
                     String framePath = config.folder + (frame + 1) + ".png";
                     try {
                         File imageFile = PathResolver.getFile(framePath);
                         if (imageFile.exists()) {
                             animationFrames[i][frame] = ImageIO.read(imageFile);
-                            loadedFrames++;
-                        } else {
-                            System.err.println("❌ ไม่พบไฟล์: " + imageFile.getAbsolutePath());
                         }
                     } catch (Exception e) {
-                        System.err.println("❌ Error โหลด " + framePath + ": " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
-                System.out.println(
-                        "✅ โหลด " + config.folder + " สำเร็จ: " + loadedFrames + "/" + config.frameCount + " เฟรม");
             }
-            System.out.println("🎬 โหลดเฟรมอนิเมชั่นเสร็จสิ้น!");
         } catch (Exception e) {
-            System.err.println("❌ Error ใน static block: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void loadImage() {
-        if (animationFrames != null && animationIndex >= 0 && animationIndex < animationFrames.length 
-            && animationFrames[animationIndex] != null && animationFrames[animationIndex].length > 0 
-            && animationFrames[animationIndex][0] != null) {
+        if (animationFrames != null && animationIndex >= 0 && animationIndex < animationFrames.length
+                && animationFrames[animationIndex] != null && animationFrames[animationIndex].length > 0
+                && animationFrames[animationIndex][0] != null) {
             BufferedImage firstFrame = animationFrames[animationIndex][0];
             width = firstFrame.getWidth() * GameConfig.HEAD_IMAGE_SCALE;
             height = firstFrame.getHeight() * GameConfig.HEAD_IMAGE_SCALE;
@@ -137,19 +126,19 @@ public class HeadObject {
     }
 
     private void updateAnimation() {
-        if (animationFrames == null || animationIndex < 0 || animationIndex >= animationFrames.length 
-            || animationFrames[animationIndex] == null || animationFrames[animationIndex].length == 0) {
+        if (animationFrames == null || animationIndex < 0 || animationIndex >= animationFrames.length
+                || animationFrames[animationIndex] == null || animationFrames[animationIndex].length == 0) {
             return;
         }
-        
+
         long currentTime = System.currentTimeMillis();
-        
+
         if (lastFrameTime == 0) {
             lastFrameTime = currentTime;
         }
-        
+
         long elapsed = currentTime - lastFrameTime;
-        
+
         if (elapsed >= GameConfig.HEAD_ANIMATION_SPEED) {
             currentFrame = (currentFrame + 1) % animationFrames[animationIndex].length;
             lastFrameTime = currentTime;
@@ -179,6 +168,14 @@ public class HeadObject {
     public String getImagePath() {
         return imagePath;
     }
+    
+    public int getWidth() {
+        return width;
+    }
+    
+    public int getHeight() {
+        return height;
+    }
 
     public void setPosition(double x, double y) {
         this.x = x;
@@ -189,16 +186,28 @@ public class HeadObject {
         this.velocityX = vx;
         this.velocityY = vy;
     }
-    
-    /**
-     * อัพเดทจาก sync message โดยไม่ทำลาย animation state
-     */
-    public void updateFromSync(double x, double y, double vx, double vy) {
+
+    public void updateFromSync(double x, double y, double vx, double vy, String imagePath, boolean isSkull) {
         this.x = x;
         this.y = y;
         this.velocityX = vx;
         this.velocityY = vy;
-        // ไม่ทำอะไรกับ lastFrameTime และ currentFrame เพื่อให้อนิเมชั่นเล่นต่อได้
+        if (!this.imagePath.equals(imagePath)) {
+            this.imagePath = imagePath;
+            try {
+                this.animationIndex = Integer.parseInt(imagePath);
+                if (this.animationIndex < 0 || this.animationIndex >= GameConfig.HEAD_ANIMATIONS.length) {
+                    this.animationIndex = 0;
+                }
+            } catch (NumberFormatException e) {
+                this.animationIndex = 0;
+            }
+            this.isSkull = (this.animationIndex == GameConfig.SKULL_INDEX);
+            this.currentFrame = 0;
+            this.lastFrameTime = System.currentTimeMillis();
+            loadImage();
+        }
+        this.isSkull = isSkull;
     }
 
     public boolean isSkull() {
