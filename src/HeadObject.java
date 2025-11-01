@@ -45,21 +45,33 @@ public class HeadObject {
     
     static {
         try {
+            System.out.println("🎬 กำลังโหลดเฟรมอนิเมชั่น...");
             animationFrames = new BufferedImage[GameConfig.HEAD_ANIMATIONS.length][];
             for (int i = 0; i < GameConfig.HEAD_ANIMATIONS.length; i++) {
                 GameConfig.AnimationConfig config = GameConfig.HEAD_ANIMATIONS[i];
                 animationFrames[i] = new BufferedImage[config.frameCount];
                 
+                int loadedFrames = 0;
                 for (int frame = 0; frame < config.frameCount; frame++) {
                     String framePath = config.folder + (frame + 1) + ".png";
                     try {
-                        animationFrames[i][frame] = ImageIO.read(new File(framePath));
+                        File imageFile = PathResolver.getFile(framePath);
+                        if (imageFile.exists()) {
+                            animationFrames[i][frame] = ImageIO.read(imageFile);
+                            loadedFrames++;
+                        } else {
+                            System.err.println("❌ ไม่พบไฟล์: " + imageFile.getAbsolutePath());
+                        }
                     } catch (Exception e) {
+                        System.err.println("❌ Error โหลด " + framePath + ": " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
+                System.out.println("✅ โหลด " + config.folder + " สำเร็จ: " + loadedFrames + "/" + config.frameCount + " เฟรม");
             }
+            System.out.println("🎬 โหลดเฟรมอนิเมชั่นเสร็จสิ้น!");
         } catch (Exception e) {
+            System.err.println("❌ Error ใน static block: " + e.getMessage());
             e.printStackTrace();
         }
     }

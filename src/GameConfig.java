@@ -117,9 +117,9 @@ public class GameConfig {
     public static final long EXPLOSION_DURATION = 500;       // ระยะเวลาระเบิด (มิลลิวินาที)
     public static final int EXPLOSION_SIZE = 96;             // ขนาดระเบิด
     public static final String[] EXPLOSION_FRAMES = {        // เฟรมแอนิเมชั่นระเบิด
-        "res/particles/ranged_particles-sheet0-0.png",
-        "res/particles/ranged_particles-sheet0-1.png",
-        "res/particles/ranged_particles-sheet0-2.png"
+        "../res/particles/ranged_particles-sheet0-0.png",
+        "../res/particles/ranged_particles-sheet0-1.png",
+        "../res/particles/ranged_particles-sheet0-2.png"
     };
     public static final int EXPLOSION_FRAME_DURATION = 166;  // ระยะเวลาต่อเฟรม (มิลลิวินาที)
     
