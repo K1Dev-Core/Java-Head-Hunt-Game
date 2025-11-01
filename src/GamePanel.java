@@ -190,9 +190,9 @@ public class GamePanel extends JPanel {
     public void updateHead(HeadObject newHead) {
         HeadObject existingHead = heads.get(newHead.getId());
         if (existingHead != null) {
-            existingHead.updateFromSync(newHead.getX(), newHead.getY(), 
-                                       newHead.getVelocityX(), newHead.getVelocityY(),
-                                       newHead.getImagePath(), newHead.isSkull());
+            existingHead.updateFromSync(newHead.getX(), newHead.getY(),
+                    newHead.getVelocityX(), newHead.getVelocityY(),
+                    newHead.getImagePath(), newHead.isSkull());
         } else {
             heads.put(newHead.getId(), newHead);
         }
