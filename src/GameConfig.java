@@ -23,7 +23,7 @@ public class GameConfig {
     public static final int MAX_HEADS = 10; // จำนวนหัวสูงสุดในเกม
     public static final int SCORE_PER_HIT = 10; // คะแนนต่อการกดหัว
     public static final int MAX_PLAYERS = 4; // จำนวนผู้เล่นสูงสุด
-    public static final int MIN_PLAYERS = 2; // จำนวนผู้เล่นขั้นต่ำที่เกมจะเริ่ม
+    public static final int MIN_PLAYERS = 2; // จำนวนผู้เล่นขั้นต่ำที่เกมจะเริ่ม (มากกว่า 1 คน = อย่างน้อย 2 คน)
     public static final int GAME_START_DELAY = 15000; // ดีเลย์ก่อนเริ่มเกม (มิลลิวินาที)
 
     // ============================================

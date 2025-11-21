@@ -20,6 +20,19 @@ public class LobbyScreen extends JFrame {
     private Runnable onExitCallback;
     private int teamHover = -1;
     private int playerHover = -1;
+    private BufferedImage[] teamImages = new BufferedImage[4];
+    private static final double[][] TEAM_POSITIONS = {
+        {1215.0, 387.0, 175.2, 261.9},
+        {1448.0, 387.0, 182.6, 272.9},
+        {1217.0, 673.0, 179.0, 267.6},
+        {1449.0, 675.0, 178.5, 266.8}
+    };
+    private static final String[] TEAM_PATHS = {
+        "res/teams/1.png",
+        "res/teams/4.png",
+        "res/teams/2.png",
+        "res/teams/3.png"
+    };
 
     public LobbyScreen(String myPlayerId) {
         this.myPlayerId = myPlayerId;
@@ -32,6 +45,7 @@ public class LobbyScreen extends JFrame {
 
         loadBackgroundImage();
         setupCustomCursor();
+        loadTeamImages();
         playerIds.add(myPlayerId);
 
         createWindow();
@@ -69,6 +83,19 @@ public class LobbyScreen extends JFrame {
             pressedCursor = Toolkit.getDefaultToolkit().createCustomCursor(
                 scaledPressed, new Point(0, 0), "pressed cursor");
         } catch (Exception e) {
+        }
+    }
+
+    private void loadTeamImages() {
+        for (int i = 0; i < 4; i++) {
+            try {
+                String fullPath = System.getProperty("user.dir") + File.separator + TEAM_PATHS[i];
+                File imageFile = new File(fullPath);
+                if (imageFile.exists()) {
+                    teamImages[i] = ImageIO.read(imageFile);
+                }
+            } catch (Exception e) {
+            }
         }
     }
 
@@ -187,34 +214,28 @@ public class LobbyScreen extends JFrame {
                     "res/head/Duck/10.png", 1107.0, 810.0, 75.6, 75.6);
                 duck.render(g2d);
 
-                double[][] teamPositions = {
-                    {1215.0, 387.0, 175.2, 261.9},
-                    {1448.0, 387.0, 182.6, 272.9},
-                    {1217.0, 673.0, 179.0, 267.6},
-                    {1449.0, 675.0, 178.5, 266.8}
-                };
-                
-                String[] teamPaths = {
-                    "res/teams/1.png",
-                    "res/teams/4.png",
-                    "res/teams/2.png",
-                    "res/teams/3.png"
-                };
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
                 
                 for (int i = 0; i < 4; i++) {
-                    double x = teamPositions[i][0];
-                    double y = teamPositions[i][1];
-                    double w = teamPositions[i][2];
-                    double h = teamPositions[i][3];
+                    if (teamImages[i] == null) continue;
+                    
+                    double x = TEAM_POSITIONS[i][0];
+                    double y = TEAM_POSITIONS[i][1];
+                    double w = TEAM_POSITIONS[i][2];
+                    double h = TEAM_POSITIONS[i][3];
                     
                     if (teamHover == i) {
                         w *= 1.1;
                         h *= 1.1;
                     }
                     
-                    MenuElement team = new MenuElement(MenuElement.ElementType.IMAGE, 
-                        teamPaths[i], x, y, w, h);
-                    team.render(g2d);
+                    int drawX = (int)(x - w / 2);
+                    int drawY = (int)(y - h / 2);
+                    int drawW = (int)w;
+                    int drawH = (int)h;
+                    
+                    g2d.drawImage(teamImages[i], drawX, drawY, drawW, drawH, null);
                 }
 
                 if (backHover) {
@@ -293,16 +314,9 @@ public class LobbyScreen extends JFrame {
                 int oldTeamHover = teamHover;
                 teamHover = -1;
                 
-                double[][] teamPositions = {
-                    {1215.0, 387.0, 175.2, 261.9},
-                    {1448.0, 387.0, 182.6, 272.9},
-                    {1217.0, 673.0, 179.0, 267.6},
-                    {1449.0, 675.0, 178.5, 266.8}
-                };
-                
                 for (int i = 0; i < 4; i++) {
-                    if (isInsideButton(x, y, teamPositions[i][0], teamPositions[i][1], 
-                                      teamPositions[i][2], teamPositions[i][3])) {
+                    if (isInsideButton(x, y, TEAM_POSITIONS[i][0], TEAM_POSITIONS[i][1], 
+                                      TEAM_POSITIONS[i][2], TEAM_POSITIONS[i][3])) {
                         teamHover = i;
                         break;
                     }

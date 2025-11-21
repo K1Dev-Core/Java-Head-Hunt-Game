@@ -89,10 +89,24 @@ public class GameServer {
                 gameInProgress = false;
                 broadcastToAll("NEWGAME");
 
-                log("เกมรีเซ็ต - รอบใหม่เริ่มแล้ว!");
+                log("เกมรีเซ็ตแล้ว - รอผู้เล่นอย่างน้อย " + GameConfig.MIN_PLAYERS + " คนเพื่อเริ่มเกมใหม่");
+                
+                if (players.size() >= GameConfig.MIN_PLAYERS) {
+                    checkAndStartGame();
+                } else {
+                    log("ผู้เล่นไม่พอ (มี " + players.size() + "/" + GameConfig.MIN_PLAYERS + " คน) - รอผู้เล่นเพิ่มเติม...");
+                }
             } catch (Exception e) {
             }
         }).start();
+    }
+
+    private void checkAndStartGame() {
+        if (!gameInProgress && players.size() >= GameConfig.MIN_PLAYERS) {
+            gameInProgress = true;
+            broadcastToAll("GAMESTARTING");
+            log("เกมเริ่มแล้ว! มีผู้เล่น " + players.size() + " คน");
+        }
     }
 
     private void spawnInitialHeads() {
@@ -260,10 +274,8 @@ public class GameServer {
                 if (gameInProgress) {
                     out.println("GAMEINPROGRESS");
                     log("ผู้เล่น " + playerId + " พยายามเข้าในระหว่างเกม");
-                } else if (players.size() >= GameConfig.MIN_PLAYERS && !gameInProgress) {
-                    gameInProgress = true;
-                    broadcastToAll("GAMESTARTING");
-                    log("เกมเริ่มแล้ว! มีผู้เล่น " + players.size() + " คน");
+                } else {
+                    checkAndStartGame();
                 }
 
                 String message;
@@ -318,6 +330,12 @@ public class GameServer {
                 broadcastToAll("PLAYERCOUNT:" + players.size());
                 
                 log("ผู้เล่นออก: " + playerId + " (เหลือ: " + players.size() + " คน)");
+                
+                if (gameInProgress && players.size() < GameConfig.MIN_PLAYERS) {
+                    gameInProgress = false;
+                    broadcastToAll("GAMEINPROGRESS");
+                    log("ผู้เล่นไม่พอ (มี " + players.size() + "/" + GameConfig.MIN_PLAYERS + " คน) - เกมหยุดชั่วคราว");
+                }
                 
                 recalculateNextPlayerNumber();
             }
